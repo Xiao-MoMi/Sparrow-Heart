@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.heart.impl;
+package net.momirealms.sparrow.heart.impl;
 
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
@@ -8,15 +8,15 @@ import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.momirealms.sparrow.heart.heart.SparrowHeart;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class MC_1_20_4 extends SparrowHeart {
+public class MC_1_19_4 extends SparrowHeart {
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -48,21 +48,21 @@ public class MC_1_20_4 extends SparrowHeart {
     public void sendToast(Player player, ItemStack icon, String titleJson, String advancementType) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(icon);
-        Optional<DisplayInfo> displayInfo = Optional.of(new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.literal("."), Optional.empty(), AdvancementType.valueOf(advancementType), true, false, true));
+        DisplayInfo displayInfo = new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.literal(""), null, FrameType.valueOf(advancementType), true, false, true);
         AdvancementRewards advancementRewards = AdvancementRewards.EMPTY;
-        Optional<ResourceLocation> id = Optional.of(new ResourceLocation("sparrow", "toast"));
-        Criterion<ImpossibleTrigger.TriggerInstance> impossibleTrigger = new Criterion<>(new ImpossibleTrigger(), new ImpossibleTrigger.TriggerInstance());
-        HashMap<String, Criterion<?>> criteria = new HashMap<>(Map.of("impossible", impossibleTrigger));
-        AdvancementRequirements advancementRequirements = new AdvancementRequirements(new ArrayList<>(List.of(new ArrayList<>(List.of("impossible")))));
-        Advancement advancement = new Advancement(Optional.empty(), displayInfo, advancementRewards, criteria, advancementRequirements, false);
+        ResourceLocation id = new ResourceLocation("sparrow", "toast");
+        Criterion criterion = new Criterion(new ImpossibleTrigger.TriggerInstance());
+        HashMap<String, Criterion> criteria = new HashMap<>(Map.of("impossible", criterion));
+        String[][] requirements = {{"impossible"}};
+        Advancement advancement = new Advancement(id, null, displayInfo, advancementRewards, criteria, requirements);
         Map<ResourceLocation, AdvancementProgress> advancementsToGrant = new HashMap<>();
         AdvancementProgress advancementProgress = new AdvancementProgress();
-        advancementProgress.update(advancementRequirements);
+        advancementProgress.update(criteria, requirements);
         Objects.requireNonNull(advancementProgress.getCriterion("impossible")).grant();
-        advancementsToGrant.put(id.get(), advancementProgress);
-        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(new AdvancementHolder(id.get(), advancement))), new HashSet<>(), advancementsToGrant);
+        advancementsToGrant.put(id, advancementProgress);
+        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(advancement)), new HashSet<>(), advancementsToGrant);
         serverPlayer.connection.send(packet1);
-        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id.get())), new HashMap<>());
+        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id)), new HashMap<>());
         serverPlayer.connection.send(packet2);
     }
 }
