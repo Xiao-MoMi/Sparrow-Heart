@@ -7,7 +7,7 @@ plugins {
 val projectVersion : String by project
 val projectGroup : String by project
 
-allprojects {
+subprojects {
 
     apply(plugin = "java")
     apply(plugin = "maven-publish")
@@ -20,11 +20,6 @@ allprojects {
 
     dependencies {
         compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
-    }
-
-    tasks.withType<JavaCompile> {
-        options.encoding = "UTF-8"
-        options.release.set(17)
     }
 
     if ("heart" == project.name) {
