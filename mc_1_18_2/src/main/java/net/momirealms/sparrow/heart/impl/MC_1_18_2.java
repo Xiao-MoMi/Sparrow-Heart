@@ -1,5 +1,6 @@
 package net.momirealms.sparrow.heart.impl;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.network.chat.Component;
@@ -8,6 +9,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.momirealms.sparrow.heart.heart.SparrowHeart;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftItemStack;
@@ -66,5 +68,29 @@ public class MC_1_18_2 extends SparrowHeart {
         serverPlayer.connection.send(packet1);
         ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id)), new HashMap<>());
         serverPlayer.connection.send(packet2);
+    }
+
+    @Override
+    public void sendDemo(Player player) {
+        ClientboundGameEventPacket packet = new ClientboundGameEventPacket(ClientboundGameEventPacket.DEMO_EVENT, 0);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void sendCredits(Player player) {
+        ClientboundGameEventPacket packet = new ClientboundGameEventPacket(ClientboundGameEventPacket.WIN_GAME, 1F);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void sendTotemAnimation(Player player, ItemStack totem) {
+        ItemStack previousItem = player.getInventory().getItemInOffHand();
+        ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(totem))));
+        var connection = ((CraftPlayer) player).getHandle().connection;
+        connection.send(equipmentPacket);
+        ClientboundEntityEventPacket entityDataPacket = new ClientboundEntityEventPacket(((CraftPlayer) player).getHandle(), (byte) 35);
+        connection.send(entityDataPacket);
+        equipmentPacket = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(previousItem))));
+        connection.send(equipmentPacket);
     }
 }

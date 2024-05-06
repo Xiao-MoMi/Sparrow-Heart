@@ -1,5 +1,6 @@
 package net.momirealms.sparrow.heart.impl;
 
+import com.mojang.datafixers.util.Pair;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.network.chat.Component;
@@ -7,6 +8,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.momirealms.sparrow.heart.heart.SparrowHeart;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack;
@@ -61,8 +63,37 @@ public class MC_1_20_4 extends SparrowHeart {
         Objects.requireNonNull(advancementProgress.getCriterion("impossible")).grant();
         advancementsToGrant.put(id.get(), advancementProgress);
         ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(new AdvancementHolder(id.get(), advancement))), new HashSet<>(), advancementsToGrant);
-        serverPlayer.connection.send(packet1);
         ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id.get())), new HashMap<>());
-        serverPlayer.connection.send(packet2);
+        ArrayList<Packet<ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        packetListeners.add(packet1);
+        packetListeners.add(packet2);
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
+        serverPlayer.connection.send(bundlePacket);
+    }
+
+    @Override
+    public void sendDemo(Player player) {
+        ClientboundGameEventPacket packet = new ClientboundGameEventPacket(ClientboundGameEventPacket.DEMO_EVENT, 0);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void sendCredits(Player player) {
+        ClientboundGameEventPacket packet = new ClientboundGameEventPacket(ClientboundGameEventPacket.WIN_GAME, 1F);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void sendTotemAnimation(Player player, ItemStack totem) {
+        ItemStack previousItem = player.getInventory().getItemInOffHand();
+        ClientboundSetEquipmentPacket packet1 = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(totem))));
+        ClientboundEntityEventPacket packet2 = new ClientboundEntityEventPacket(((CraftPlayer) player).getHandle(), (byte) 35);
+        ClientboundSetEquipmentPacket packet3 = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(previousItem))));
+        ArrayList<Packet<ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        packetListeners.add(packet1);
+        packetListeners.add(packet2);
+        packetListeners.add(packet3);
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
+        ((CraftPlayer) player).getHandle().connection.send(bundlePacket);
     }
 }
