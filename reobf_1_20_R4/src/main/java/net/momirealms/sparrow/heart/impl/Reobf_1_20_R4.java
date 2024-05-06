@@ -9,10 +9,16 @@ import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.momirealms.sparrow.heart.heart.SparrowHeart;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +30,7 @@ public class Reobf_1_20_R4 extends SparrowHeart {
     public void sendActionBar(Player player, String json) {
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer serverPlayer = craftPlayer.getHandle();
-        ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(json, serverPlayer.registryAccess())));
+        ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(Objects.requireNonNull(CraftChatMessage.fromJSON(json)));
         serverPlayer.connection.send(packet);
     }
 
@@ -36,12 +42,12 @@ public class Reobf_1_20_R4 extends SparrowHeart {
         ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(new ClientboundSetTitlesAnimationPacket(fadeInTicks, stayTicks, fadeOutTicks));
         if (titleJson != null) {
-            packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(titleJson, serverPlayer.registryAccess()))));
+            packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(CraftChatMessage.fromJSON(titleJson))));
         } else {
             packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.empty())));
         }
         if (subTitleJson != null) {
-            packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(subTitleJson, serverPlayer.registryAccess()))));
+            packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(CraftChatMessage.fromJSON(subTitleJson))));
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
         serverPlayer.connection.send(bundlePacket);
@@ -51,7 +57,7 @@ public class Reobf_1_20_R4 extends SparrowHeart {
     public void sendToast(Player player, ItemStack icon, String titleJson, String advancementType) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(icon);
-        Optional<DisplayInfo> displayInfo = Optional.of(new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson, serverPlayer.registryAccess())), Component.literal(""), Optional.empty(), AdvancementType.valueOf(advancementType), true, false, true));
+        Optional<DisplayInfo> displayInfo = Optional.of(new DisplayInfo(nmsStack, Objects.requireNonNull(CraftChatMessage.fromJSON(titleJson)), Component.literal(""), Optional.empty(), AdvancementType.valueOf(advancementType), true, false, true));
         AdvancementRewards advancementRewards = AdvancementRewards.EMPTY;
         Optional<ResourceLocation> id = Optional.of(new ResourceLocation("sparrow", "toast"));
         Criterion<ImpossibleTrigger.TriggerInstance> impossibleTrigger = new Criterion<>(new ImpossibleTrigger(), new ImpossibleTrigger.TriggerInstance());
@@ -96,5 +102,20 @@ public class Reobf_1_20_R4 extends SparrowHeart {
         packetListeners.add(packet3);
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
         ((CraftPlayer) player).getHandle().connection.send(bundlePacket);
+    }
+
+    @Override
+    public void openCustomInventory(Player player, Inventory inventory, String jsonTitle) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        MenuType<?> menuType = CraftContainer.getNotchInventoryType(inventory);
+        AbstractContainerMenu menu = new CraftContainer(inventory, serverPlayer, serverPlayer.nextContainerCounter());
+        menu = CraftEventFactory.callInventoryOpenEvent(serverPlayer, menu);
+        if (menu != null) {
+            Component titleComponent = CraftChatMessage.fromJSON(jsonTitle);
+            menu.checkReachable = false;
+            serverPlayer.connection.send(new ClientboundOpenScreenPacket(menu.containerId, menuType, titleComponent));
+            serverPlayer.containerMenu = menu;
+            serverPlayer.initMenu(menu);
+        }
     }
 }

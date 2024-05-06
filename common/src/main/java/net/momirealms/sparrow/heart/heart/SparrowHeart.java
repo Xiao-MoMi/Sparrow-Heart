@@ -1,6 +1,7 @@
 package net.momirealms.sparrow.heart.heart;
 
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public abstract class SparrowHeart {
@@ -16,4 +17,6 @@ public abstract class SparrowHeart {
     public abstract void sendCredits(Player player);
 
     public abstract void sendTotemAnimation(Player player, ItemStack totem);
+
+    public abstract void openCustomInventory(Player player, Inventory inventory, String jsonTitle);
 }

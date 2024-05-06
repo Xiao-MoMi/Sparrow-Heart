@@ -9,10 +9,16 @@ import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.momirealms.sparrow.heart.heart.SparrowHeart;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -96,5 +102,20 @@ public class Mojmap_R1 extends SparrowHeart {
         packetListeners.add(packet3);
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
         ((CraftPlayer) player).getHandle().connection.send(bundlePacket);
+    }
+
+    @Override
+    public void openCustomInventory(Player player, Inventory inventory, String jsonTitle) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        MenuType<?> menuType = CraftContainer.getNotchInventoryType(inventory);
+        AbstractContainerMenu menu = new CraftContainer(inventory, serverPlayer, serverPlayer.nextContainerCounter());
+        menu = CraftEventFactory.callInventoryOpenEvent(serverPlayer, menu);
+        if (menu != null) {
+            Component titleComponent = CraftChatMessage.fromJSON(jsonTitle);
+            menu.checkReachable = false;
+            serverPlayer.connection.send(new ClientboundOpenScreenPacket(menu.containerId, menuType, titleComponent));
+            serverPlayer.containerMenu = menu;
+            serverPlayer.initMenu(menu);
+        }
     }
 }

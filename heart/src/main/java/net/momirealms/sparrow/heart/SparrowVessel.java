@@ -2,7 +2,6 @@ package net.momirealms.sparrow.heart;
 
 import net.momirealms.sparrow.heart.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.heart.exception.UnsupportedVersionException;
-
 import net.momirealms.sparrow.heart.impl.*;
 import org.bukkit.Bukkit;
 
