@@ -9,8 +9,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Constructor;
 
-import static java.util.Objects.requireNonNull;
-
 public abstract class SparrowHeart {
 
     public static SparrowHeart getInstance() {
@@ -76,7 +74,7 @@ public abstract class SparrowHeart {
 
     public abstract void openCustomInventory(Player player, Inventory inventory, String jsonTitle);
 
-    public abstract void updateInventoryTitle(Player player, Inventory inventory, String jsonTitle);
+    public abstract void updateInventoryTitle(Player player, String jsonTitle);
 
     public abstract void swingHand(Player player, HandSlot slot);
 }

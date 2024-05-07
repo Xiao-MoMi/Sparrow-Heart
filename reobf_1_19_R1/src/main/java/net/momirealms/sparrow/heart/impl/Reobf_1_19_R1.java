@@ -118,7 +118,7 @@ public class Reobf_1_19_R1 extends SparrowHeart {
     }
 
     @Override
-    public void updateInventoryTitle(Player player, Inventory inventory, String jsonTitle) {
+    public void updateInventoryTitle(Player player, String jsonTitle) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         AbstractContainerMenu menu = serverPlayer.containerMenu;
         serverPlayer.connection.send(new ClientboundOpenScreenPacket(menu.containerId, menu.getType(), CraftChatMessage.fromJSON(jsonTitle)));
