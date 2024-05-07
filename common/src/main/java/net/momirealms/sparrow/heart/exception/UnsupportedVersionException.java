@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.heart.exception;
+package net.momirealms.sparrow.heart.exception;
 
 public class UnsupportedVersionException extends RuntimeException {
 }

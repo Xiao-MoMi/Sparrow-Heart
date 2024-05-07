@@ -7,11 +7,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.momirealms.sparrow.heart.heart.SparrowHeart;
+import net.momirealms.sparrow.heart.SparrowHeart;
+import net.momirealms.sparrow.heart.argument.HandSlot;
 import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_19_R2.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftContainer;
@@ -111,6 +114,27 @@ public class Reobf_1_19_R2 extends SparrowHeart {
             serverPlayer.connection.send(new ClientboundOpenScreenPacket(menu.containerId, menuType, titleComponent));
             serverPlayer.containerMenu = menu;
             serverPlayer.initMenu(menu);
+        }
+    }
+
+    @Override
+    public void updateInventoryTitle(Player player, Inventory inventory, String jsonTitle) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        AbstractContainerMenu menu = serverPlayer.containerMenu;
+        serverPlayer.connection.send(new ClientboundOpenScreenPacket(menu.containerId, menu.getType(), CraftChatMessage.fromJSON(jsonTitle)));
+        serverPlayer.initMenu(menu);
+    }
+
+    @Override
+    public void swingHand(Player player, HandSlot slot) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        ClientboundAnimatePacket packet = new ClientboundAnimatePacket(serverPlayer, slot.getId());
+        serverPlayer.connection.send(packet);
+        ChunkMap.TrackedEntity tracker = serverPlayer.tracker;
+        if (tracker != null) {
+            for (ServerPlayerConnection connection : tracker.seenBy) {
+                connection.send(packet);
+            }
         }
     }
 }
