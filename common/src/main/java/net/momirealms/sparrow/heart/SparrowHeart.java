@@ -13,7 +13,7 @@ import static java.util.Objects.requireNonNull;
 
 public abstract class SparrowHeart {
 
-    public SparrowHeart getInstance() {
+    public static SparrowHeart getInstance() {
         return SingletonHolder.INSTANCE;
     }
 
