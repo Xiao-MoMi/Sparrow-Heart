@@ -147,7 +147,7 @@ public class Reobf_1_18_R2 extends SparrowHeart {
     }
 
     @Override
-    public EnchantmentOffer[] getOffers(Player player, ItemStack itemToEnchant, int shelves) {
+    public EnchantmentOffer[] getEnchantmentOffers(Player player, ItemStack itemToEnchant, int shelves) {
         EnchantmentOffer[] offers = new EnchantmentOffer[3];
         Random random = new Random();
         DataSlot enchantmentSeed = DataSlot.standalone();

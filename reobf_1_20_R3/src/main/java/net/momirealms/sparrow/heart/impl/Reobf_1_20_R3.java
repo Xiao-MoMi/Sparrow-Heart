@@ -21,7 +21,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
-import net.momirealms.sparrow.heart.impl.gui.SparrowEnchantmentMenu;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftContainer;
@@ -37,10 +36,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class Reobf_1_20_R3 extends SparrowHeart {
-
-    public Reobf_1_20_R3() {
-        SparrowEnchantmentMenu.registerSparrowEnchantmentMenu();
-    }
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -156,7 +151,7 @@ public class Reobf_1_20_R3 extends SparrowHeart {
     }
 
     @Override
-    public EnchantmentOffer[] getOffers(Player player, ItemStack itemToEnchant, int shelves) {
+    public EnchantmentOffer[] getEnchantmentOffers(Player player, ItemStack itemToEnchant, int shelves) {
         EnchantmentOffer[] offers = new EnchantmentOffer[3];
         RandomSource random = RandomSource.create();
         DataSlot enchantmentSeed = DataSlot.standalone();

@@ -79,5 +79,5 @@ public abstract class SparrowHeart {
 
     public abstract void swingHand(Player player, HandSlot slot);
 
-    public abstract EnchantmentOffer[] getOffers(Player player, ItemStack itemToEnchant, int shelves);
+    public abstract EnchantmentOffer[] getEnchantmentOffers(Player player, ItemStack itemToEnchant, int shelves);
 }
