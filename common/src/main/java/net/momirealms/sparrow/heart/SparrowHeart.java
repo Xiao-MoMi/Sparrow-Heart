@@ -3,6 +3,7 @@ package net.momirealms.sparrow.heart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.exception.UnsupportedVersionException;
 import org.bukkit.Bukkit;
+import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -77,4 +78,6 @@ public abstract class SparrowHeart {
     public abstract void updateInventoryTitle(Player player, String jsonTitle);
 
     public abstract void swingHand(Player player, HandSlot slot);
+
+    public abstract EnchantmentOffer[] getOffers(Player player, ItemStack itemToEnchant, int shelves);
 }

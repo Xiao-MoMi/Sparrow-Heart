@@ -1,0 +1,10 @@
+name: SparrowHeart
+main: net.momirealms.sparrow.heart.SparrowHeartPlugin
+version: 1.0
+author: XiaoMoMi
+api-version: 1.18
+folia-supported: true
+commands:
+  sparrowheart:
+    permission: sparrowheart.admin
+    description: "Heart commands"

@@ -3,6 +3,7 @@ package net.momirealms.sparrow.heart.impl;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
@@ -10,9 +11,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
@@ -20,6 +26,8 @@ import org.bukkit.craftbukkit.v1_20_R1.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftContainer;
 import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_20_R1.util.CraftChatMessage;
+import org.bukkit.craftbukkit.v1_20_R1.util.CraftNamespacedKey;
+import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -140,5 +148,45 @@ public class Reobf_1_20_R1 extends SparrowHeart {
                 connection.send(packet);
             }
         }
+    }
+
+    @Override
+    public EnchantmentOffer[] getOffers(Player player, ItemStack itemToEnchant, int shelves) {
+        EnchantmentOffer[] offers = new EnchantmentOffer[3];
+        RandomSource random = RandomSource.create();
+        DataSlot enchantmentSeed = DataSlot.standalone();
+        random.setSeed(enchantmentSeed.get());
+        net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
+        int[] costs = new int[3];
+        int[] enchantClue = new int[]{-1, -1, -1};
+        int[] levelClue = new int[]{-1, -1, -1};
+        int j;
+        for (j = 0; j < 3; ++j) {
+            costs[j] = EnchantmentHelper.getEnchantmentCost(random, j, shelves, itemStack);
+            enchantClue[j] = -1;
+            levelClue[j] = -1;
+            if (costs[j] < j + 1) {
+                costs[j] = 0;
+            }
+        }
+        for (j = 0; j < 3; ++j) {
+            if (costs[j] > 0) {
+                random.setSeed(enchantmentSeed.get() + j);
+                List<EnchantmentInstance> list = EnchantmentHelper.selectEnchantment(random, itemStack, costs[j], false);
+                if (itemStack.is(Items.BOOK) && list.size() > 1) {
+                    list.remove(random.nextInt(list.size()));
+                }
+                if (list != null && !list.isEmpty()) {
+                    EnchantmentInstance weightedRandomEnchant = list.get(random.nextInt(list.size()));
+                    enchantClue[j] = BuiltInRegistries.ENCHANTMENT.getId(weightedRandomEnchant.enchantment);
+                    levelClue[j] = weightedRandomEnchant.level;
+                }
+            }
+        }
+        for (j = 0; j < 3; ++j) {
+            org.bukkit.enchantments.Enchantment enchantment = (enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(BuiltInRegistries.ENCHANTMENT.byId(enchantClue[j])))) : null;
+            offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, levelClue[j], costs[j]) : null;
+        }
+        return offers;
     }
 }
