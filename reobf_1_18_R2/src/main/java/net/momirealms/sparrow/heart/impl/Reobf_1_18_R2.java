@@ -151,6 +151,7 @@ public class Reobf_1_18_R2 extends SparrowHeart {
         EnchantmentOffer[] offers = new EnchantmentOffer[3];
         Random random = new Random();
         DataSlot enchantmentSeed = DataSlot.standalone();
+        enchantmentSeed.set(player.getEnchantmentSeed());
         random.setSeed(enchantmentSeed.get());
         net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
         int[] costs = new int[3];

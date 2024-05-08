@@ -15,6 +15,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
+import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -155,6 +156,7 @@ public class Reobf_1_20_R3 extends SparrowHeart {
         EnchantmentOffer[] offers = new EnchantmentOffer[3];
         RandomSource random = RandomSource.create();
         DataSlot enchantmentSeed = DataSlot.standalone();
+        enchantmentSeed.set(player.getEnchantmentSeed());
         random.setSeed(enchantmentSeed.get());
         net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
         int[] costs = new int[3];

@@ -158,6 +158,7 @@ public class Mojmap_R1 extends SparrowHeart {
         RandomSource random = RandomSource.create();
         DataSlot enchantmentSeed = DataSlot.standalone();
         random.setSeed(enchantmentSeed.get());
+        enchantmentSeed.set(player.getEnchantmentSeed());
         net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
         int[] costs = new int[3];
         int[] enchantClue = new int[]{-1, -1, -1};
