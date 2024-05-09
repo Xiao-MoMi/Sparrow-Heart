@@ -23,7 +23,6 @@
  */
 package net.momirealms.sparrow.heart.argument;
 
-import net.kyori.adventure.util.Index;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -78,9 +77,7 @@ public final class NamedTextColor {
 
     public static final NamedTextColor WHITE = new NamedTextColor("white", WHITE_VALUE);
 
-    private static final List<NamedTextColor> VALUES = List.of(BLACK, DARK_BLUE, DARK_GREEN, DARK_AQUA, DARK_RED, DARK_PURPLE, GOLD, GRAY, DARK_GRAY, BLUE, GREEN, AQUA, RED, LIGHT_PURPLE, YELLOW, WHITE);
-
-    public static final Index<String, NamedTextColor> NAMES = Index.create(constant -> constant.name, VALUES);
+    public static final List<NamedTextColor> VALUES = List.of(BLACK, DARK_BLUE, DARK_GREEN, DARK_AQUA, DARK_RED, DARK_PURPLE, GOLD, GRAY, DARK_GRAY, BLUE, GREEN, AQUA, RED, LIGHT_PURPLE, YELLOW, WHITE);
 
     public static @Nullable NamedTextColor namedColor(final int value) {
         switch (value) {
