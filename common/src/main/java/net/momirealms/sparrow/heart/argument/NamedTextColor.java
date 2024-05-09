@@ -129,11 +129,11 @@ public final class NamedTextColor {
         this.value = value;
     }
 
-    public String name() {
+    public String getName() {
         return name;
     }
 
-    public int value() {
+    public int getValue() {
         return value;
     }
 }
