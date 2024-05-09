@@ -1,26 +1,39 @@
 package net.momirealms.sparrow.heart.impl;
 
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.scores.PlayerTeam;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
+import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
+import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_18_R2.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_18_R2.inventory.CraftContainer;
@@ -185,5 +198,58 @@ public class Reobf_1_18_R2 extends SparrowHeart {
             offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, levelClue[j], costs[j]) : null;
         }
         return offers;
+    }
+
+    @Override
+    public HighlightBlocks highlightBlocks(Player player, NamedTextColor color, Location... locations) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>();
+        ArrayList<String> entityUUIDs = new ArrayList<>();
+        int[] entityIDs = new int[locations.length];
+        int index = 0;
+        for (Location location : locations) {
+            Shulker shulker = new Shulker(EntityType.SHULKER, serverPlayer.getLevel());
+            ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
+                    shulker,
+                    EntityType.SHULKER,
+                    0,
+                    new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ())
+            );
+            SynchedEntityData entityData = new SynchedEntityData(shulker);
+            entityData.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40));
+            ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
+                    shulker.getId(),
+                    entityData,
+                    false
+            );
+            entityUUIDs.add(shulker.getUUID().toString());
+            entityIDs[index++] = shulker.getId();
+            packets.add(entityPacket);
+            packets.add(dataPacket);
+        }
+        String teamName = "sparrow_highlight_" + SelfIncreaseInt.getAndIncrease();
+        PlayerTeam team = new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName);
+        team.setColor(ChatFormatting.valueOf(color.getName().toUpperCase(Locale.ENGLISH)));
+        team.getPlayers().addAll(entityUUIDs);
+        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false);
+        packets.add(teamPacket);
+        for (Packet<ClientGamePacketListener> packet : packets) {
+            serverPlayer.connection.send(packet);
+        }
+        return new HighlightBlocks(entityIDs, teamName);
+    }
+
+    @Override
+    public void removeClientSideTeam(Player player, String teamName) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createRemovePacket(new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName));
+        serverPlayer.connection.send(teamPacket);
+    }
+
+    @Override
+    public void removeClientSideEntity(Player player, int... entityIDs) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        ClientboundRemoveEntitiesPacket packet = new ClientboundRemoveEntitiesPacket(entityIDs);
+        serverPlayer.connection.send(packet);
     }
 }

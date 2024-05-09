@@ -1,8 +1,11 @@
 package net.momirealms.sparrow.heart;
 
 import net.momirealms.sparrow.heart.argument.HandSlot;
+import net.momirealms.sparrow.heart.argument.NamedTextColor;
 import net.momirealms.sparrow.heart.exception.UnsupportedVersionException;
+import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -80,4 +83,10 @@ public abstract class SparrowHeart {
     public abstract void swingHand(Player player, HandSlot slot);
 
     public abstract EnchantmentOffer[] getEnchantmentOffers(Player player, ItemStack itemToEnchant, int shelves);
+
+    public abstract HighlightBlocks highlightBlocks(Player player, NamedTextColor color, Location... locations);
+
+    public abstract void removeClientSideTeam(Player player, String teamName);
+
+    public abstract void removeClientSideEntity(Player player, int... entityIDs);
 }
