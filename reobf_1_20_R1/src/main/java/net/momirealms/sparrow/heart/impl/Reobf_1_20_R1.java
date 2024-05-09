@@ -231,7 +231,7 @@ public class Reobf_1_20_R1 extends SparrowHeart {
         PlayerTeam team = new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName);
         team.setColor(ChatFormatting.valueOf(color.getName().toUpperCase(Locale.ENGLISH)));
         team.getPlayers().addAll(entityUUIDs);
-        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false);
+        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true);
         packets.add(teamPacket);
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
         serverPlayer.connection.send(bundlePacket);
