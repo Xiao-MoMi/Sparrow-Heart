@@ -21,6 +21,8 @@ public abstract class SparrowHeart {
 
     public abstract void sendDebugMarker(Player player, Location location, String message, int duration, int color);
 
+    public abstract String getBiomeResourceLocation(Location location);
+
     private static class SingletonHolder {
         private static final SparrowHeart INSTANCE = getHeart();
 
@@ -43,6 +45,7 @@ public abstract class SparrowHeart {
                     case "1.19.2", "1.19.1" -> className = "Reobf_1_19_R1";
                     case "1.18.2" -> className = "Reobf_1_18_R2";
                     case "1.18.1", "1.18" -> className = "Reobf_1_18_R1";
+                    case "1.17.1" -> className = "Reobf_1_17_R1";
                     default -> throw new UnsupportedVersionException();
                 }
             }

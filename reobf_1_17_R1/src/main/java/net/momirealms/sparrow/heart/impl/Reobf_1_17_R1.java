@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -16,10 +17,10 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.monster.Slime;
@@ -38,14 +39,16 @@ import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
-import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftContainer;
-import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage;
-import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_17_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_17_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_17_R1.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_17_R1.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_17_R1.inventory.CraftContainer;
+import org.bukkit.craftbukkit.v1_17_R1.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_17_R1.util.CraftChatMessage;
+import org.bukkit.craftbukkit.v1_17_R1.util.CraftNamespacedKey;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -54,9 +57,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class Reobf_1_19_R1 extends SparrowHeart {
+public class Reobf_1_17_R1 extends SparrowHeart {
 
-    private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
+    private final DedicatedServer dedicatedServer = ((CraftServer) Bukkit.getServer()).getServer();
+
+    private final Registry<Biome> biomeRegistry = dedicatedServer.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -75,7 +80,7 @@ public class Reobf_1_19_R1 extends SparrowHeart {
         if (titleJson != null) {
             packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(titleJson))));
         } else {
-            packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.empty())));
+            packetListeners.add(new ClientboundSetTitleTextPacket(new TextComponent("")));
         }
         if (subTitleJson != null) {
             packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(subTitleJson))));
@@ -89,7 +94,7 @@ public class Reobf_1_19_R1 extends SparrowHeart {
     public void sendToast(Player player, ItemStack icon, String titleJson, String advancementType) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(icon);
-        DisplayInfo displayInfo = new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.literal(""), null, FrameType.valueOf(advancementType), true, false, true);
+        DisplayInfo displayInfo = new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.nullToEmpty(""), null, FrameType.valueOf(advancementType), true, false, true);
         AdvancementRewards advancementRewards = AdvancementRewards.EMPTY;
         ResourceLocation id = new ResourceLocation("sparrow", "toast");
         Criterion criterion = new Criterion(new ImpossibleTrigger.TriggerInstance());
@@ -170,7 +175,7 @@ public class Reobf_1_19_R1 extends SparrowHeart {
     @Override
     public EnchantmentOffer[] getEnchantmentOffers(Player player, ItemStack itemToEnchant, int shelves) {
         EnchantmentOffer[] offers = new EnchantmentOffer[3];
-        RandomSource random = RandomSource.create();
+        Random random = new Random();
         DataSlot enchantmentSeed = DataSlot.standalone();
         random.setSeed(enchantmentSeed.get());
         enchantmentSeed.set(player.getEnchantmentSeed());
@@ -227,8 +232,7 @@ public class Reobf_1_19_R1 extends SparrowHeart {
                     0,
                     EntityType.SLIME,
                     0,
-                    Vec3.ZERO,
-                    0
+                    Vec3.ZERO
             );
             SynchedEntityData entityData = new SynchedEntityData(slime);
             entityData.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40));
@@ -302,7 +306,7 @@ public class Reobf_1_19_R1 extends SparrowHeart {
 
     @Override
     public String getBiomeResourceLocation(Location location) {
-        Biome biome = ((CraftWorld) location.getWorld()).getHandle().getNoiseBiome(location.getBlockX() >> 2, location.getBlockY() >> 2, location.getBlockZ() >> 2).value();
+        Biome biome = ((CraftWorld) location.getWorld()).getHandle().getNoiseBiome(location.getBlockX() >> 2, location.getBlockY() >> 2, location.getBlockZ() >> 2);
         ResourceLocation resourceLocation = biomeRegistry.getKey(biome);
         if (resourceLocation == null) {
             return "void";

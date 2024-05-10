@@ -6,7 +6,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -30,6 +32,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
@@ -56,6 +59,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class Reobf_1_20_R4 extends SparrowHeart {
+
+    private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().registryOrThrow(Registries.BIOME);
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -301,5 +306,15 @@ public class Reobf_1_20_R4 extends SparrowHeart {
     public void sendDebugMarker(Player player, Location location, String message, int duration, int color) {
         GameTestAddMarkerDebugPayload payload = new GameTestAddMarkerDebugPayload(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()), color, message, duration);
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(payload));
+    }
+
+    @Override
+    public String getBiomeResourceLocation(Location location) {
+        Biome biome = ((CraftWorld) location.getWorld()).getHandle().getNoiseBiome(location.getBlockX() >> 2, location.getBlockY() >> 2, location.getBlockZ() >> 2).value();
+        ResourceLocation resourceLocation = biomeRegistry.getKey(biome);
+        if (resourceLocation == null) {
+            return "void";
+        }
+        return resourceLocation.toString();
     }
 }

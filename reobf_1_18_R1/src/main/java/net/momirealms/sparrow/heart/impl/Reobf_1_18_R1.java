@@ -17,6 +17,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
@@ -29,6 +30,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
@@ -37,7 +39,10 @@ import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_18_R1.CraftServer;
+import org.bukkit.craftbukkit.v1_18_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_18_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_18_R1.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_18_R1.inventory.CraftContainer;
@@ -53,6 +58,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class Reobf_1_18_R1 extends SparrowHeart {
+
+    private final DedicatedServer dedicatedServer = ((CraftServer) Bukkit.getServer()).getServer();
+
+    private final Registry<Biome> biomeRegistry = dedicatedServer.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -293,5 +302,15 @@ public class Reobf_1_18_R1 extends SparrowHeart {
         friendlyByteBuf.writeUtf(message);
         friendlyByteBuf.writeInt(duration);
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.DEBUG_GAME_TEST_ADD_MARKER, friendlyByteBuf));
+    }
+
+    @Override
+    public String getBiomeResourceLocation(Location location) {
+        Biome biome = ((CraftWorld) location.getWorld()).getHandle().getNoiseBiome(location.getBlockX() >> 2, location.getBlockY() >> 2, location.getBlockZ() >> 2);
+        ResourceLocation resourceLocation = biomeRegistry.getKey(biome);
+        if (resourceLocation == null) {
+            return "void";
+        }
+        return resourceLocation.toString();
     }
 }

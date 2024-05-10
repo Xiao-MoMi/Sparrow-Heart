@@ -10,6 +10,7 @@ dependencies {
     implementation(project(mapOf("path" to ":reobf_1_19_R1", "configuration" to "reobf")))
     implementation(project(mapOf("path" to ":reobf_1_18_R2", "configuration" to "reobf")))
     implementation(project(mapOf("path" to ":reobf_1_18_R1", "configuration" to "reobf")))
+    implementation(project(mapOf("path" to ":reobf_1_17_R1", "configuration" to "reobf")))
 }
 
 java {

@@ -6,7 +6,9 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -28,6 +30,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
@@ -38,6 +41,7 @@ import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.v1_19_R3.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_19_R3.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftContainer;
@@ -53,6 +57,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 public class Reobf_1_19_R3 extends SparrowHeart {
+
+    private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().registryOrThrow(Registries.BIOME);
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -300,5 +306,15 @@ public class Reobf_1_19_R3 extends SparrowHeart {
         friendlyByteBuf.writeUtf(message);
         friendlyByteBuf.writeInt(duration);
         ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.DEBUG_GAME_TEST_ADD_MARKER, friendlyByteBuf));
+    }
+
+    @Override
+    public String getBiomeResourceLocation(Location location) {
+        Biome biome = ((CraftWorld) location.getWorld()).getHandle().getNoiseBiome(location.getBlockX() >> 2, location.getBlockY() >> 2, location.getBlockZ() >> 2).value();
+        ResourceLocation resourceLocation = biomeRegistry.getKey(biome);
+        if (resourceLocation == null) {
+            return "void";
+        }
+        return resourceLocation.toString();
     }
 }
