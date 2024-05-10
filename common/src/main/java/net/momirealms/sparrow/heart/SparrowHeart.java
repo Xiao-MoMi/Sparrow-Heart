@@ -19,6 +19,8 @@ public abstract class SparrowHeart {
         return SingletonHolder.INSTANCE;
     }
 
+    public abstract void sendDebugMarker(Player player, Location location, String message, int duration, int color);
+
     private static class SingletonHolder {
         private static final SparrowHeart INSTANCE = getHeart();
 

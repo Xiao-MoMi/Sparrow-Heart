@@ -5,6 +5,7 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -282,5 +283,15 @@ public class Reobf_1_18_R1 extends SparrowHeart {
             ClientboundTeleportEntityPacket packet = new ClientboundTeleportEntityPacket(buf);
             serverPlayer.connection.send(packet);
         }
+    }
+
+    @Override
+    public void sendDebugMarker(Player player, Location location, String message, int duration, int color) {
+        FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(Unpooled.buffer());
+        friendlyByteBuf.writeBlockPos(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        friendlyByteBuf.writeInt(color);
+        friendlyByteBuf.writeUtf(message);
+        friendlyByteBuf.writeInt(duration);
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.DEBUG_GAME_TEST_ADD_MARKER, friendlyByteBuf));
     }
 }

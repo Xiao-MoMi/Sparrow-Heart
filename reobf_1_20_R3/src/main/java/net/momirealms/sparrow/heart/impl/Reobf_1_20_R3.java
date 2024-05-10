@@ -5,10 +5,13 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -289,5 +292,11 @@ public class Reobf_1_20_R3 extends SparrowHeart {
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
         serverPlayer.connection.send(bundlePacket);
+    }
+
+    @Override
+    public void sendDebugMarker(Player player, Location location, String message, int duration, int color) {
+        GameTestAddMarkerDebugPayload payload = new GameTestAddMarkerDebugPayload(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()), color, message, duration);
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(payload));
     }
 }
