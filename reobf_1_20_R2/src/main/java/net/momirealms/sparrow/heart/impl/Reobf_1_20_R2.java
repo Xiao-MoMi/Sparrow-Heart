@@ -21,19 +21,20 @@ import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
+import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_20_R2.entity.CraftPlayer;
@@ -41,7 +42,6 @@ import org.bukkit.craftbukkit.v1_20_R2.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_20_R2.inventory.CraftContainer;
 import org.bukkit.craftbukkit.v1_20_R2.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_20_R2.util.CraftChatMessage;
-import org.bukkit.craftbukkit.v1_20_R2.util.CraftLocation;
 import org.bukkit.craftbukkit.v1_20_R2.util.CraftNamespacedKey;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
@@ -216,18 +216,30 @@ public class Reobf_1_20_R2 extends SparrowHeart {
         int[] entityIDs = new int[locations.length];
         int index = 0;
         for (Location location : locations) {
-            Shulker shulker = new Shulker(EntityType.SHULKER, serverPlayer.level());
+            UUID uuid = UUID.randomUUID();
+            int entityID = SelfIncreaseEntityID.getAndIncrease();
             ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
-                    shulker,
+                    entityID,
+                    uuid,
+                    location.getX(),
+                    location.getY(),
+                    location.getZ(),
                     0,
-                    CraftLocation.toBlockPosition(location)
+                    0,
+                    EntityType.SLIME,
+                    0,
+                    Vec3.ZERO,
+                    0
             );
             ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
-                    shulker.getId(),
-                    List.of(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40)))
+                    entityID,
+                    List.of(
+                            SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40)),
+                            SynchedEntityData.DataValue.create(new EntityDataAccessor<>(16, EntityDataSerializers.INT), 2)
+                    )
             );
-            entityUUIDs.add(shulker.getUUID().toString());
-            entityIDs[index++] = shulker.getId();
+            entityUUIDs.add(uuid.toString());
+            entityIDs[index++] = entityID;
             packets.add(entityPacket);
             packets.add(dataPacket);
         }

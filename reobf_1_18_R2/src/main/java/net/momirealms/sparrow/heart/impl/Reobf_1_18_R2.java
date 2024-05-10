@@ -5,7 +5,6 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -22,13 +21,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
@@ -211,22 +211,29 @@ public class Reobf_1_18_R2 extends SparrowHeart {
         int[] entityIDs = new int[locations.length];
         int index = 0;
         for (Location location : locations) {
-            Shulker shulker = new Shulker(EntityType.SHULKER, serverPlayer.getLevel());
+            Slime slime = new Slime(EntityType.SLIME, serverPlayer.getLevel());
             ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
-                    shulker,
-                    EntityType.SHULKER,
+                    slime.getId(),
+                    slime.getUUID(),
+                    location.getX(),
+                    location.getY(),
+                    location.getZ(),
                     0,
-                    new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ())
+                    0,
+                    EntityType.SLIME,
+                    0,
+                    Vec3.ZERO
             );
-            SynchedEntityData entityData = new SynchedEntityData(shulker);
+            SynchedEntityData entityData = new SynchedEntityData(slime);
             entityData.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40));
+            entityData.set(new EntityDataAccessor<>(16, EntityDataSerializers.INT), 2);
             ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
-                    shulker.getId(),
+                    slime.getId(),
                     entityData,
                     false
             );
-            entityUUIDs.add(shulker.getUUID().toString());
-            entityIDs[index++] = shulker.getId();
+            entityUUIDs.add(slime.getUUID().toString());
+            entityIDs[index++] = slime.getId();
             packets.add(entityPacket);
             packets.add(dataPacket);
         }
