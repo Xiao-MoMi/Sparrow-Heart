@@ -29,6 +29,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.scores.PlayerTeam;
+import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
@@ -235,6 +236,7 @@ public class Reobf_1_20_R4 extends SparrowHeart {
         PlayerTeam team = new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName);
         team.setColor(ChatFormatting.valueOf(color.getName().toUpperCase(Locale.ENGLISH)));
         team.getPlayers().addAll(entityUUIDs);
+        team.setCollisionRule(Team.CollisionRule.NEVER);
         ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true);
         packets.add(teamPacket);
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
