@@ -12,6 +12,7 @@ dependencies {
     compileOnly(files("libs/datafixerupper-7.0.14.jar"))
     compileOnly("com.mojang:brigadier:1.0.18")
     compileOnly(project(":common"))
+    compileOnly("io.netty:netty-buffer:4.1.109.Final")
 }
 
 tasks.withType<JavaCompile> {

@@ -17,4 +17,12 @@ public class HighlightBlocks {
         SparrowHeart.getInstance().removeClientSideTeam(player, teamName);
         SparrowHeart.getInstance().removeClientSideEntity(player, entityIDs);
     }
+
+    public int[] entityIDs() {
+        return entityIDs;
+    }
+
+    public String team() {
+        return teamName;
+    }
 }

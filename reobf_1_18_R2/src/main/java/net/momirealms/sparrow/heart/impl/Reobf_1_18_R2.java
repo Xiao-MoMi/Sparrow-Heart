@@ -1,11 +1,13 @@
 package net.momirealms.sparrow.heart.impl;
 
 import com.mojang.datafixers.util.Pair;
+import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.protocol.Packet;
@@ -251,5 +253,25 @@ public class Reobf_1_18_R2 extends SparrowHeart {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ClientboundRemoveEntitiesPacket packet = new ClientboundRemoveEntitiesPacket(entityIDs);
         serverPlayer.connection.send(packet);
+    }
+
+    @Override
+    public void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        float ROTATION_FACTOR = 256.0F / 360.0F;
+        float yaw = location.getYaw() * ROTATION_FACTOR;
+        float pitch = location.getPitch() * ROTATION_FACTOR;
+        for (int entityID : entityIDs) {
+            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+            buf.writeInt(entityID);
+            buf.writeDouble(location.getX());
+            buf.writeDouble(location.getY());
+            buf.writeDouble(location.getZ());
+            buf.writeByte((byte) yaw);
+            buf.writeByte((byte) pitch);
+            buf.writeBoolean(onGround);
+            ClientboundTeleportEntityPacket packet = new ClientboundTeleportEntityPacket(buf);
+            serverPlayer.connection.send(packet);
+        }
     }
 }

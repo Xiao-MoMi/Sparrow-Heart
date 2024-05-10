@@ -89,4 +89,7 @@ public abstract class SparrowHeart {
     public abstract void removeClientSideTeam(Player player, String teamName);
 
     public abstract void removeClientSideEntity(Player player, int... entityIDs);
+
+    public abstract void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs);
+
 }
