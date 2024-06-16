@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.impl;
+package net.momirealms.sparrow.heart.impl.reobf_1_19_r3;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
@@ -12,8 +12,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
-import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -39,17 +37,18 @@ import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_20_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_20_R3.event.CraftEventFactory;
-import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftContainer;
-import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_20_R3.util.CraftChatMessage;
-import org.bukkit.craftbukkit.v1_20_R3.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_19_R3.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R3.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R3.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftContainer;
+import org.bukkit.craftbukkit.v1_19_R3.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R3.util.CraftChatMessage;
+import org.bukkit.craftbukkit.v1_19_R3.util.CraftNamespacedKey;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -58,7 +57,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class Reobf_1_20_R3 extends SparrowHeart {
+public class Heart extends SparrowHeart {
 
     private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().registryOrThrow(Registries.BIOME);
 
@@ -92,20 +91,20 @@ public class Reobf_1_20_R3 extends SparrowHeart {
     public void sendToast(Player player, ItemStack icon, String titleJson, String advancementType) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(icon);
-        Optional<DisplayInfo> displayInfo = Optional.of(new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.literal(""), Optional.empty(), AdvancementType.valueOf(advancementType), true, false, true));
+        DisplayInfo displayInfo = new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.literal(""), null, FrameType.valueOf(advancementType), true, false, true);
         AdvancementRewards advancementRewards = AdvancementRewards.EMPTY;
-        Optional<ResourceLocation> id = Optional.of(new ResourceLocation("sparrow", "toast"));
-        Criterion<ImpossibleTrigger.TriggerInstance> impossibleTrigger = new Criterion<>(new ImpossibleTrigger(), new ImpossibleTrigger.TriggerInstance());
-        HashMap<String, Criterion<?>> criteria = new HashMap<>(Map.of("impossible", impossibleTrigger));
-        AdvancementRequirements advancementRequirements = new AdvancementRequirements(new ArrayList<>(List.of(new ArrayList<>(List.of("impossible")))));
-        Advancement advancement = new Advancement(Optional.empty(), displayInfo, advancementRewards, criteria, advancementRequirements, false);
+        ResourceLocation id = new ResourceLocation("sparrow", "toast");
+        Criterion criterion = new Criterion(new ImpossibleTrigger.TriggerInstance());
+        HashMap<String, Criterion> criteria = new HashMap<>(Map.of("impossible", criterion));
+        String[][] requirements = {{"impossible"}};
+        Advancement advancement = new Advancement(id, null, displayInfo, advancementRewards, criteria, requirements);
         Map<ResourceLocation, AdvancementProgress> advancementsToGrant = new HashMap<>();
         AdvancementProgress advancementProgress = new AdvancementProgress();
-        advancementProgress.update(advancementRequirements);
+        advancementProgress.update(criteria, requirements);
         Objects.requireNonNull(advancementProgress.getCriterion("impossible")).grant();
-        advancementsToGrant.put(id.get(), advancementProgress);
-        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(new AdvancementHolder(id.get(), advancement))), new HashSet<>(), advancementsToGrant);
-        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id.get())), new HashMap<>());
+        advancementsToGrant.put(id, advancementProgress);
+        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(advancement)), new HashSet<>(), advancementsToGrant);
+        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id)), new HashMap<>());
         ArrayList<Packet<ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(packet1);
         packetListeners.add(packet2);
@@ -180,8 +179,8 @@ public class Reobf_1_20_R3 extends SparrowHeart {
         EnchantmentOffer[] offers = new EnchantmentOffer[3];
         RandomSource random = RandomSource.create();
         DataSlot enchantmentSeed = DataSlot.standalone();
-        enchantmentSeed.set(player.getEnchantmentSeed());
         random.setSeed(enchantmentSeed.get());
+        enchantmentSeed.set(player.getEnchantmentSeed());
         net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
         int[] costs = new int[3];
         int[] enchantClue = new int[]{-1, -1, -1};
@@ -302,8 +301,12 @@ public class Reobf_1_20_R3 extends SparrowHeart {
 
     @Override
     public void sendDebugMarker(Player player, Location location, String message, int duration, int color) {
-        GameTestAddMarkerDebugPayload payload = new GameTestAddMarkerDebugPayload(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()), color, message, duration);
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(payload));
+        FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(Unpooled.buffer());
+        friendlyByteBuf.writeBlockPos(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+        friendlyByteBuf.writeInt(color);
+        friendlyByteBuf.writeUtf(message);
+        friendlyByteBuf.writeInt(duration);
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.DEBUG_GAME_TEST_ADD_MARKER, friendlyByteBuf));
     }
 
     @Override
@@ -314,5 +317,10 @@ public class Reobf_1_20_R3 extends SparrowHeart {
             return "void";
         }
         return resourceLocation.toString();
+    }
+
+    @Override
+    public FakeArmorStand createFakeArmorStand(Location location) {
+        return new SparrowArmorStand(location);
     }
 }

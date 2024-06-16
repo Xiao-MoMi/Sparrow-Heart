@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.impl;
+package net.momirealms.sparrow.heart.impl.mojmap_r1;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
@@ -12,6 +12,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -33,21 +35,21 @@ import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
-import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_19_R2.event.CraftEventFactory;
-import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftContainer;
-import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_19_R2.util.CraftChatMessage;
-import org.bukkit.craftbukkit.v1_19_R2.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftContainer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -56,7 +58,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class Reobf_1_19_R2 extends SparrowHeart {
+public class Heart extends SparrowHeart {
 
     private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().registryOrThrow(Registries.BIOME);
 
@@ -64,7 +66,7 @@ public class Reobf_1_19_R2 extends SparrowHeart {
     public void sendActionBar(Player player, String json) {
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer serverPlayer = craftPlayer.getHandle();
-        ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(json)));
+        ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(json, serverPlayer.registryAccess())));
         serverPlayer.connection.send(packet);
     }
 
@@ -72,41 +74,43 @@ public class Reobf_1_19_R2 extends SparrowHeart {
     public void sendTitle(Player player, @Nullable String titleJson, @Nullable String subTitleJson, int fadeInTicks, int stayTicks, int fadeOutTicks) {
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer serverPlayer = craftPlayer.getHandle();
-        ArrayList<Packet<ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(new ClientboundSetTitlesAnimationPacket(fadeInTicks, stayTicks, fadeOutTicks));
         if (titleJson != null) {
-            packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(titleJson))));
+            packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(titleJson, serverPlayer.registryAccess()))));
         } else {
             packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.empty())));
         }
         if (subTitleJson != null) {
-            packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(subTitleJson))));
+            packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(subTitleJson, serverPlayer.registryAccess()))));
         }
-        for (Packet<ClientGamePacketListener> packet: packetListeners) {
-            serverPlayer.connection.send(packet);
-        }
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
+        serverPlayer.connection.send(bundlePacket);
     }
 
     @Override
     public void sendToast(Player player, ItemStack icon, String titleJson, String advancementType) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(icon);
-        DisplayInfo displayInfo = new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.literal(""), null, FrameType.valueOf(advancementType), true, false, true);
+        Optional<DisplayInfo> displayInfo = Optional.of(new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson, serverPlayer.registryAccess())), Component.literal(""), Optional.empty(), AdvancementType.valueOf(advancementType), true, false, true));
         AdvancementRewards advancementRewards = AdvancementRewards.EMPTY;
-        ResourceLocation id = new ResourceLocation("sparrow", "toast");
-        Criterion criterion = new Criterion(new ImpossibleTrigger.TriggerInstance());
-        HashMap<String, Criterion> criteria = new HashMap<>(Map.of("impossible", criterion));
-        String[][] requirements = {{"impossible"}};
-        Advancement advancement = new Advancement(id, null, displayInfo, advancementRewards, criteria, requirements);
+        Optional<ResourceLocation> id = Optional.of(new ResourceLocation("sparrow", "toast"));
+        Criterion<ImpossibleTrigger.TriggerInstance> impossibleTrigger = new Criterion<>(new ImpossibleTrigger(), new ImpossibleTrigger.TriggerInstance());
+        HashMap<String, Criterion<?>> criteria = new HashMap<>(Map.of("impossible", impossibleTrigger));
+        AdvancementRequirements advancementRequirements = new AdvancementRequirements(new ArrayList<>(List.of(new ArrayList<>(List.of("impossible")))));
+        Advancement advancement = new Advancement(Optional.empty(), displayInfo, advancementRewards, criteria, advancementRequirements, false);
         Map<ResourceLocation, AdvancementProgress> advancementsToGrant = new HashMap<>();
         AdvancementProgress advancementProgress = new AdvancementProgress();
-        advancementProgress.update(criteria, requirements);
+        advancementProgress.update(advancementRequirements);
         Objects.requireNonNull(advancementProgress.getCriterion("impossible")).grant();
-        advancementsToGrant.put(id, advancementProgress);
-        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(advancement)), new HashSet<>(), advancementsToGrant);
-        serverPlayer.connection.send(packet1);
-        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id)), new HashMap<>());
-        serverPlayer.connection.send(packet2);
+        advancementsToGrant.put(id.get(), advancementProgress);
+        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(new AdvancementHolder(id.get(), advancement))), new HashSet<>(), advancementsToGrant);
+        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id.get())), new HashMap<>());
+        ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        packetListeners.add(packet1);
+        packetListeners.add(packet2);
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
+        serverPlayer.connection.send(bundlePacket);
     }
 
     @Override
@@ -124,13 +128,15 @@ public class Reobf_1_19_R2 extends SparrowHeart {
     @Override
     public void sendTotemAnimation(Player player, ItemStack totem) {
         ItemStack previousItem = player.getInventory().getItemInOffHand();
-        ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(totem))));
-        var connection = ((CraftPlayer) player).getHandle().connection;
-        connection.send(equipmentPacket);
-        ClientboundEntityEventPacket entityDataPacket = new ClientboundEntityEventPacket(((CraftPlayer) player).getHandle(), (byte) 35);
-        connection.send(entityDataPacket);
-        equipmentPacket = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(previousItem))));
-        connection.send(equipmentPacket);
+        ClientboundSetEquipmentPacket packet1 = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(totem))));
+        ClientboundEntityEventPacket packet2 = new ClientboundEntityEventPacket(((CraftPlayer) player).getHandle(), (byte) 35);
+        ClientboundSetEquipmentPacket packet3 = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(previousItem))));
+        ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        packetListeners.add(packet1);
+        packetListeners.add(packet2);
+        packetListeners.add(packet3);
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
+        ((CraftPlayer) player).getHandle().connection.send(bundlePacket);
     }
 
     @Override
@@ -175,7 +181,8 @@ public class Reobf_1_19_R2 extends SparrowHeart {
         RandomSource random = RandomSource.create();
         DataSlot enchantmentSeed = DataSlot.standalone();
         random.setSeed(enchantmentSeed.get());
-        enchantmentSeed.set(player.getEnchantmentSeed());
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        enchantmentSeed.set(serverPlayer.enchantmentSeed);
         net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
         int[] costs = new int[3];
         int[] enchantClue = new int[]{-1, -1, -1};
@@ -192,7 +199,7 @@ public class Reobf_1_19_R2 extends SparrowHeart {
         for (j = 0; j < 3; ++j) {
             if (costs[j] > 0) {
                 random.setSeed(enchantmentSeed.get() + j);
-                List<EnchantmentInstance> list = EnchantmentHelper.selectEnchantment(random, itemStack, costs[j], false);
+                List<EnchantmentInstance> list = EnchantmentHelper.selectEnchantment(((CraftWorld) player.getWorld()).getHandle().enabledFeatures(), random, itemStack, costs[j], false);
                 if (itemStack.is(Items.BOOK) && list.size() > 1) {
                     list.remove(random.nextInt(list.size()));
                 }
@@ -213,7 +220,7 @@ public class Reobf_1_19_R2 extends SparrowHeart {
     @Override
     public HighlightBlocks highlightBlocks(Player player, NamedTextColor color, Location... locations) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>();
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         ArrayList<String> entityUUIDs = new ArrayList<>();
         int[] entityIDs = new int[locations.length];
         int index = 0;
@@ -249,12 +256,10 @@ public class Reobf_1_19_R2 extends SparrowHeart {
         PlayerTeam team = new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName);
         team.setColor(ChatFormatting.valueOf(color.getName().toUpperCase(Locale.ENGLISH)));
         team.getPlayers().addAll(entityUUIDs);
-        team.setCollisionRule(Team.CollisionRule.NEVER);
         ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true);
         packets.add(teamPacket);
-        for (Packet<ClientGamePacketListener> packet : packets) {
-            serverPlayer.connection.send(packet);
-        }
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
+        serverPlayer.connection.send(bundlePacket);
         return new HighlightBlocks(entityIDs, teamName);
     }
 
@@ -275,6 +280,7 @@ public class Reobf_1_19_R2 extends SparrowHeart {
     @Override
     public void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         float ROTATION_FACTOR = 256.0F / 360.0F;
         float yaw = location.getYaw() * ROTATION_FACTOR;
         float pitch = location.getPitch() * ROTATION_FACTOR;
@@ -287,19 +293,17 @@ public class Reobf_1_19_R2 extends SparrowHeart {
             buf.writeByte((byte) yaw);
             buf.writeByte((byte) pitch);
             buf.writeBoolean(onGround);
-            ClientboundTeleportEntityPacket packet = new ClientboundTeleportEntityPacket(buf);
-            serverPlayer.connection.send(packet);
+            ClientboundTeleportEntityPacket packet = ClientboundTeleportEntityPacket.STREAM_CODEC.decode(buf);
+            packets.add(packet);
         }
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
+        serverPlayer.connection.send(bundlePacket);
     }
 
     @Override
     public void sendDebugMarker(Player player, Location location, String message, int duration, int color) {
-        FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(Unpooled.buffer());
-        friendlyByteBuf.writeBlockPos(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
-        friendlyByteBuf.writeInt(color);
-        friendlyByteBuf.writeUtf(message);
-        friendlyByteBuf.writeInt(duration);
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.DEBUG_GAME_TEST_ADD_MARKER, friendlyByteBuf));
+        GameTestAddMarkerDebugPayload payload = new GameTestAddMarkerDebugPayload(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()), color, message, duration);
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(payload));
     }
 
     @Override
@@ -310,5 +314,10 @@ public class Reobf_1_19_R2 extends SparrowHeart {
             return "void";
         }
         return resourceLocation.toString();
+    }
+
+    @Override
+    public FakeArmorStand createFakeArmorStand(Location location) {
+        return new SparrowArmorStand(location);
     }
 }

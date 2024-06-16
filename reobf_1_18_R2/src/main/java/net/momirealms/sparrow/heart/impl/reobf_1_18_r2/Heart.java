@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.impl;
+package net.momirealms.sparrow.heart.impl.reobf_1_18_r2;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
@@ -37,6 +37,7 @@ import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Bukkit;
@@ -57,7 +58,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class Reobf_1_18_R2 extends SparrowHeart {
+public class Heart extends SparrowHeart {
 
     private final DedicatedServer dedicatedServer = ((CraftServer) Bukkit.getServer()).getServer();
 
@@ -312,5 +313,10 @@ public class Reobf_1_18_R2 extends SparrowHeart {
             return "void";
         }
         return resourceLocation.toString();
+    }
+
+    @Override
+    public FakeArmorStand createFakeArmorStand(Location location) {
+        return new SparrowArmorStand(location);
     }
 }

@@ -3,6 +3,7 @@ package net.momirealms.sparrow.heart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
 import net.momirealms.sparrow.heart.exception.UnsupportedVersionException;
+import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -28,29 +29,29 @@ public abstract class SparrowHeart {
 
         public static SparrowHeart getHeart() {
             String bukkitVersion = Bukkit.getServer().getBukkitVersion().split("-")[0];
-            String className;
+            String packageName;
             if (isMojMap()) {
                 switch (bukkitVersion) {
-                    case "1.20.5", "1.20.6" -> className = "Mojmap_R1";
+                    case "1.20.5", "1.20.6" -> packageName = "mojmap_r1";
                     default -> throw new UnsupportedVersionException();
                 }
             } else {
                 switch (bukkitVersion) {
-                    case "1.20.5", "1.20.6" -> className = "Reobf_1_20_R4";
-                    case "1.20.3", "1.20.4" -> className = "Reobf_1_20_R3";
-                    case "1.20.2" -> className = "Reobf_1_20_R2";
-                    case "1.20", "1.20.1" -> className = "Reobf_1_20_R1";
-                    case "1.19.4" -> className = "Reobf_1_19_R3";
-                    case "1.19.3" -> className = "Reobf_1_19_R2";
-                    case "1.19.2", "1.19.1" -> className = "Reobf_1_19_R1";
-                    case "1.18.2" -> className = "Reobf_1_18_R2";
-                    case "1.18.1", "1.18" -> className = "Reobf_1_18_R1";
-                    case "1.17.1" -> className = "Reobf_1_17_R1";
+                    case "1.20.5", "1.20.6" -> packageName = "reobf_1_20_r4";
+                    case "1.20.3", "1.20.4" -> packageName = "reobf_1_20_r3";
+                    case "1.20.2" -> packageName = "reobf_1_20_r2";
+                    case "1.20", "1.20.1" -> packageName = "reobf_1_20_r1";
+                    case "1.19.4" -> packageName = "reobf_1_19_r3";
+                    case "1.19.3" -> packageName = "reobf_1_19_r2";
+                    case "1.19.2", "1.19.1" -> packageName = "reobf_1_19_r1";
+                    case "1.18.2" -> packageName = "Reobf_1_18_R2";
+                    case "1.18.1", "1.18" -> packageName = "Reobf_1_18_r1";
+                    case "1.17.1" -> packageName = "Reobf_1_17_r1";
                     default -> throw new UnsupportedVersionException();
                 }
             }
             try {
-                Class<?> clazz = Class.forName("net.momirealms.sparrow.heart.impl." + className);
+                Class<?> clazz = Class.forName("net.momirealms.sparrow.heart." + packageName + ".Heart");
                 Constructor<?> constructor = clazz.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 return (SparrowHeart) constructor.newInstance();
@@ -97,4 +98,5 @@ public abstract class SparrowHeart {
 
     public abstract void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs);
 
+    public abstract FakeArmorStand createFakeArmorStand(Location location);
 }

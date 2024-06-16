@@ -1,18 +1,18 @@
-//plugins {
-//    id("io.papermc.paperweight.userdev") version "1.7.0"
-//}
+plugins {
+    id("io.papermc.paperweight.userdev") version "1.7.1"
+}
 
 repositories {
     maven("https://libraries.minecraft.net/")
 }
 
 dependencies {
-//    paperweight.paperDevBundle("1.20.6-R0.1-SNAPSHOT")
-    compileOnly(files("libs/1.20.6.jar"))
-    compileOnly(files("libs/datafixerupper-7.0.14.jar"))
-    compileOnly("com.mojang:brigadier:1.0.18")
+    paperweight.paperDevBundle("1.20.6-R0.1-SNAPSHOT")
     compileOnly(project(":common"))
-    compileOnly("io.netty:netty-buffer:4.1.109.Final")
+//    compileOnly(files("libs/1.20.6.jar"))
+//    compileOnly(files("libs/datafixerupper-7.0.14.jar"))
+//    compileOnly("com.mojang:brigadier:1.0.18")
+//    compileOnly("io.netty:netty-buffer:4.1.109.Final")
 }
 
 tasks.withType<JavaCompile> {
@@ -28,4 +28,4 @@ java {
     }
 }
 
-//paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION
+paperweight.reobfArtifactConfiguration = io.papermc.paperweight.userdev.ReobfArtifactConfiguration.MOJANG_PRODUCTION

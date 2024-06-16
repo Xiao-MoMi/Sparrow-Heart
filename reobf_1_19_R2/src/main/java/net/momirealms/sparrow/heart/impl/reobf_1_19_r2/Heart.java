@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.impl;
+package net.momirealms.sparrow.heart.impl.reobf_1_19_r2;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
@@ -7,6 +7,8 @@ import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
@@ -22,7 +24,6 @@ import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
@@ -36,16 +37,18 @@ import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
 import net.momirealms.sparrow.heart.argument.HandSlot;
 import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
+import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
-import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftContainer;
-import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage;
-import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_19_R2.event.CraftEventFactory;
+import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftContainer;
+import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.v1_19_R2.util.CraftChatMessage;
+import org.bukkit.craftbukkit.v1_19_R2.util.CraftNamespacedKey;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -54,9 +57,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class Reobf_1_19_R1 extends SparrowHeart {
+public class Heart extends SparrowHeart {
 
-    private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registryAccess().registryOrThrow(Registry.BIOME_REGISTRY);
+    private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().registryOrThrow(Registries.BIOME);
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -196,13 +199,13 @@ public class Reobf_1_19_R1 extends SparrowHeart {
                 }
                 if (list != null && !list.isEmpty()) {
                     EnchantmentInstance weightedRandomEnchant = list.get(random.nextInt(list.size()));
-                    enchantClue[j] = Registry.ENCHANTMENT.getId(weightedRandomEnchant.enchantment);
+                    enchantClue[j] = BuiltInRegistries.ENCHANTMENT.getId(weightedRandomEnchant.enchantment);
                     levelClue[j] = weightedRandomEnchant.level;
                 }
             }
         }
         for (j = 0; j < 3; ++j) {
-            org.bukkit.enchantments.Enchantment enchantment = (enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(Registry.ENCHANTMENT.getKey(Registry.ENCHANTMENT.byId(enchantClue[j])))) : null;
+            org.bukkit.enchantments.Enchantment enchantment = (enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(BuiltInRegistries.ENCHANTMENT.byId(enchantClue[j])))) : null;
             offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, levelClue[j], costs[j]) : null;
         }
         return offers;
@@ -216,10 +219,11 @@ public class Reobf_1_19_R1 extends SparrowHeart {
         int[] entityIDs = new int[locations.length];
         int index = 0;
         for (Location location : locations) {
-            Slime slime = new Slime(EntityType.SLIME, serverPlayer.getLevel());
+            UUID uuid = UUID.randomUUID();
+            int entityID = SelfIncreaseEntityID.getAndIncrease();
             ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
-                    slime.getId(),
-                    slime.getUUID(),
+                    entityID,
+                    uuid,
                     location.getX(),
                     location.getY(),
                     location.getZ(),
@@ -230,16 +234,15 @@ public class Reobf_1_19_R1 extends SparrowHeart {
                     Vec3.ZERO,
                     0
             );
-            SynchedEntityData entityData = new SynchedEntityData(slime);
-            entityData.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40));
-            entityData.set(new EntityDataAccessor<>(16, EntityDataSerializers.INT), 2);
             ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
-                    slime.getId(),
-                    entityData,
-                    false
+                    entityID,
+                    List.of(
+                            SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40)),
+                            SynchedEntityData.DataValue.create(new EntityDataAccessor<>(16, EntityDataSerializers.INT), 2)
+                    )
             );
-            entityUUIDs.add(slime.getUUID().toString());
-            entityIDs[index++] = slime.getId();
+            entityUUIDs.add(uuid.toString());
+            entityIDs[index++] = entityID;
             packets.add(entityPacket);
             packets.add(dataPacket);
         }
@@ -308,5 +311,10 @@ public class Reobf_1_19_R1 extends SparrowHeart {
             return "void";
         }
         return resourceLocation.toString();
+    }
+
+    @Override
+    public FakeArmorStand createFakeArmorStand(Location location) {
+        return new SparrowArmorStand(location);
     }
 }
