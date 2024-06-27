@@ -309,12 +309,12 @@ public class Heart extends SparrowHeart {
         team.setNameTagVisibility(Team.Visibility.valueOf(tagVisibility.name()));
         team.setDisplayName(CraftChatMessage.fromJSON(display));
         team.setPlayerPrefix(CraftChatMessage.fromJSON(prefix));
-        team.setPlayerPrefix(CraftChatMessage.fromJSON(suffix));
+        team.setPlayerSuffix(CraftChatMessage.fromJSON(suffix));
         team.getPlayers().addAll(members);
         team.setAllowFriendlyFire(allowFriendlyFire);
         team.setSeeFriendlyInvisibles(seeFriendlyInvisibles);
         team.setDeathMessageVisibility(Team.Visibility.valueOf(messageVisibility.name()));
-        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false);
+        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true);
         serverPlayer.connection.send(teamPacket);
     }
 
@@ -327,11 +327,11 @@ public class Heart extends SparrowHeart {
         team.setNameTagVisibility(Team.Visibility.valueOf(tagVisibility.name()));
         team.setDisplayName(CraftChatMessage.fromJSON(display));
         team.setPlayerPrefix(CraftChatMessage.fromJSON(prefix));
-        team.setPlayerPrefix(CraftChatMessage.fromJSON(suffix));
+        team.setPlayerSuffix(CraftChatMessage.fromJSON(suffix));
         team.setAllowFriendlyFire(allowFriendlyFire);
         team.setSeeFriendlyInvisibles(seeFriendlyInvisibles);
         team.setDeathMessageVisibility(Team.Visibility.valueOf(messageVisibility.name()));
-        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true);
+        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false);
         serverPlayer.connection.send(teamPacket);
     }
 
