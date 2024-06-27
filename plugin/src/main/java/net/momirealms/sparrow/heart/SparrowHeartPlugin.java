@@ -1,6 +1,6 @@
 package net.momirealms.sparrow.heart;
 
-import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;

@@ -1,10 +1,13 @@
 package net.momirealms.sparrow.heart;
 
-import net.momirealms.sparrow.heart.argument.HandSlot;
-import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
+import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
 import net.momirealms.sparrow.heart.exception.UnsupportedVersionException;
 import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
+import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
+import net.momirealms.sparrow.heart.feature.team.TeamColor;
+import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.enchantments.EnchantmentOffer;
@@ -13,6 +16,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Constructor;
+import java.util.List;
 
 public abstract class SparrowHeart {
 
@@ -44,14 +48,14 @@ public abstract class SparrowHeart {
                     case "1.19.4" -> packageName = "reobf_1_19_r3";
                     case "1.19.3" -> packageName = "reobf_1_19_r2";
                     case "1.19.2", "1.19.1" -> packageName = "reobf_1_19_r1";
-                    case "1.18.2" -> packageName = "Reobf_1_18_R2";
-                    case "1.18.1", "1.18" -> packageName = "Reobf_1_18_r1";
-                    case "1.17.1" -> packageName = "Reobf_1_17_r1";
+                    case "1.18.2" -> packageName = "reobf_1_18_R2";
+                    case "1.18.1", "1.18" -> packageName = "reobf_1_18_r1";
+                    case "1.17.1" -> packageName = "reobf_1_17_r1";
                     default -> throw new UnsupportedVersionException();
                 }
             }
             try {
-                Class<?> clazz = Class.forName("net.momirealms.sparrow.heart." + packageName + ".Heart");
+                Class<?> clazz = Class.forName("net.momirealms.sparrow.heart.impl." + packageName + ".Heart");
                 Constructor<?> constructor = clazz.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 return (SparrowHeart) constructor.newInstance();
@@ -93,6 +97,10 @@ public abstract class SparrowHeart {
     public abstract HighlightBlocks highlightBlocks(Player player, NamedTextColor color, Location... locations);
 
     public abstract void removeClientSideTeam(Player player, String teamName);
+
+    public abstract void addClientSideTeam(Player player, String teamName, List<String> members, String display, String prefix, String suffix, TeamVisibility tagVisibility, TeamVisibility messageVisibility, TeamCollisionRule collisionRule, TeamColor color, boolean allowFriendlyFire, boolean seeFriendlyInvisibles);
+
+    public abstract void updateClientSideTeam(Player player, String teamName, String display, String prefix, String suffix, TeamVisibility tagVisibility, TeamVisibility messageVisibility, TeamCollisionRule collisionRule, TeamColor color, boolean allowFriendlyFire, boolean seeFriendlyInvisibles);
 
     public abstract void removeClientSideEntity(Player player, int... entityIDs);
 

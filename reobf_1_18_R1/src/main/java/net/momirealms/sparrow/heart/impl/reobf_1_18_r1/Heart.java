@@ -35,10 +35,13 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
-import net.momirealms.sparrow.heart.argument.HandSlot;
-import net.momirealms.sparrow.heart.argument.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
+import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
+import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
+import net.momirealms.sparrow.heart.feature.team.TeamColor;
+import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -265,6 +268,41 @@ public class Heart extends SparrowHeart {
     public void removeClientSideTeam(Player player, String teamName) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createRemovePacket(new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName));
+        serverPlayer.connection.send(teamPacket);
+    }
+
+    @Override
+    public void addClientSideTeam(Player player, String teamName, List<String> members, String display, String prefix, String suffix, TeamVisibility tagVisibility, TeamVisibility messageVisibility, TeamCollisionRule collisionRule, TeamColor color, boolean allowFriendlyFire, boolean seeFriendlyInvisibles) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        PlayerTeam team = new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName);
+        team.setColor(ChatFormatting.valueOf(color.name()));
+        team.setCollisionRule(Team.CollisionRule.valueOf(collisionRule.name()));
+        team.setNameTagVisibility(Team.Visibility.valueOf(tagVisibility.name()));
+        team.setDisplayName(CraftChatMessage.fromJSON(display));
+        team.setPlayerPrefix(CraftChatMessage.fromJSON(prefix));
+        team.setPlayerPrefix(CraftChatMessage.fromJSON(suffix));
+        team.getPlayers().addAll(members);
+        team.setAllowFriendlyFire(allowFriendlyFire);
+        team.setSeeFriendlyInvisibles(seeFriendlyInvisibles);
+        team.setDeathMessageVisibility(Team.Visibility.valueOf(messageVisibility.name()));
+        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false);
+        serverPlayer.connection.send(teamPacket);
+    }
+
+    @Override
+    public void updateClientSideTeam(Player player, String teamName, String display, String prefix, String suffix, TeamVisibility tagVisibility, TeamVisibility messageVisibility, TeamCollisionRule collisionRule, TeamColor color, boolean allowFriendlyFire, boolean seeFriendlyInvisibles) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        PlayerTeam team = new PlayerTeam(MinecraftServer.getServer().getScoreboard(), teamName);
+        team.setColor(ChatFormatting.valueOf(color.name()));
+        team.setCollisionRule(Team.CollisionRule.valueOf(collisionRule.name()));
+        team.setNameTagVisibility(Team.Visibility.valueOf(tagVisibility.name()));
+        team.setDisplayName(CraftChatMessage.fromJSON(display));
+        team.setPlayerPrefix(CraftChatMessage.fromJSON(prefix));
+        team.setPlayerPrefix(CraftChatMessage.fromJSON(suffix));
+        team.setAllowFriendlyFire(allowFriendlyFire);
+        team.setSeeFriendlyInvisibles(seeFriendlyInvisibles);
+        team.setDeathMessageVisibility(Team.Visibility.valueOf(messageVisibility.name()));
+        ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, true);
         serverPlayer.connection.send(teamPacket);
     }
 

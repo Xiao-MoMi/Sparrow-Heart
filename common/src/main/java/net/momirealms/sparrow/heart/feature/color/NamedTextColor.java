@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package net.momirealms.sparrow.heart.argument;
+package net.momirealms.sparrow.heart.feature.color;
 
 import org.jetbrains.annotations.Nullable;
 

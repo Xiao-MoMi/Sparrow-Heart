@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.argument;
+package net.momirealms.sparrow.heart.feature.bossbar;
 
 public enum BossBarColor {
     PINK,
