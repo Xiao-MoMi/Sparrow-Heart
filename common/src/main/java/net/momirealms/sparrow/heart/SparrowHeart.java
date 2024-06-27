@@ -33,25 +33,19 @@ public abstract class SparrowHeart {
         public static SparrowHeart getHeart() {
             String bukkitVersion = Bukkit.getServer().getBukkitVersion().split("-")[0];
             String packageName;
-            if (isMojMap()) {
-                switch (bukkitVersion) {
-                    case "1.20.5", "1.20.6" -> packageName = "mojmap_r1";
-                    default -> throw new UnsupportedVersionException();
-                }
-            } else {
-                switch (bukkitVersion) {
-                    case "1.20.5", "1.20.6" -> packageName = "reobf_1_20_r4";
-                    case "1.20.3", "1.20.4" -> packageName = "reobf_1_20_r3";
-                    case "1.20.2" -> packageName = "reobf_1_20_r2";
-                    case "1.20", "1.20.1" -> packageName = "reobf_1_20_r1";
-                    case "1.19.4" -> packageName = "reobf_1_19_r3";
-                    case "1.19.3" -> packageName = "reobf_1_19_r2";
-                    case "1.19.2", "1.19.1" -> packageName = "reobf_1_19_r1";
-                    case "1.18.2" -> packageName = "reobf_1_18_R2";
-                    case "1.18.1", "1.18" -> packageName = "reobf_1_18_r1";
-                    case "1.17.1" -> packageName = "reobf_1_17_r1";
-                    default -> throw new UnsupportedVersionException();
-                }
+            switch (bukkitVersion) {
+                case "1.21" -> packageName = "reobf_1_21_r1";
+                case "1.20.5", "1.20.6" -> packageName = "reobf_1_20_r4";
+                case "1.20.3", "1.20.4" -> packageName = "reobf_1_20_r3";
+                case "1.20.2" -> packageName = "reobf_1_20_r2";
+                case "1.20", "1.20.1" -> packageName = "reobf_1_20_r1";
+                case "1.19.4" -> packageName = "reobf_1_19_r3";
+                case "1.19.3" -> packageName = "reobf_1_19_r2";
+                case "1.19.2", "1.19.1" -> packageName = "reobf_1_19_r1";
+                case "1.18.2" -> packageName = "reobf_1_18_R2";
+                case "1.18.1", "1.18" -> packageName = "reobf_1_18_r1";
+                case "1.17.1" -> packageName = "reobf_1_17_r1";
+                default -> throw new UnsupportedVersionException();
             }
             try {
                 Class<?> clazz = Class.forName("net.momirealms.sparrow.heart.impl." + packageName + ".Heart");
