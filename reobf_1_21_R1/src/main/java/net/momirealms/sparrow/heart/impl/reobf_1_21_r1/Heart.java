@@ -5,8 +5,7 @@ import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
+import net.minecraft.core.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
@@ -25,17 +24,21 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
+import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.EnchantingTableBlock;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
@@ -54,6 +57,7 @@ import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
@@ -126,7 +130,7 @@ public class Heart extends SparrowHeart {
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(icon);
         Optional<DisplayInfo> displayInfo = Optional.of(new DisplayInfo(nmsStack, Objects.requireNonNull(CraftChatMessage.fromJSON(titleJson)), Component.literal(""), Optional.empty(), AdvancementType.valueOf(advancementType), true, false, true));
         AdvancementRewards advancementRewards = AdvancementRewards.EMPTY;
-        Optional<ResourceLocation> id = Optional.of(new ResourceLocation("sparrow", "toast"));
+        Optional<ResourceLocation> id = Optional.of(ResourceLocation.fromNamespaceAndPath("sparrow", "toast"));
         Criterion<ImpossibleTrigger.TriggerInstance> impossibleTrigger = new Criterion<>(new ImpossibleTrigger(), new ImpossibleTrigger.TriggerInstance());
         HashMap<String, Criterion<?>> criteria = new HashMap<>(Map.of("impossible", impossibleTrigger));
         AdvancementRequirements advancementRequirements = new AdvancementRequirements(new ArrayList<>(List.of(new ArrayList<>(List.of("impossible")))));
@@ -228,22 +232,30 @@ public class Heart extends SparrowHeart {
                 costs[j] = 0;
             }
         }
+        IdMap<Holder<Enchantment>> registry = MinecraftServer.getServer().registryAccess().registryOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
         for (j = 0; j < 3; ++j) {
             if (costs[j] > 0) {
                 random.setSeed(enchantmentSeed.get() + j);
-                List<EnchantmentInstance> list = EnchantmentHelper.selectEnchantment(((CraftWorld) player.getWorld()).getHandle().enabledFeatures(), random, itemStack, costs[j], false);
-                if (itemStack.is(Items.BOOK) && list.size() > 1) {
-                    list.remove(random.nextInt(list.size()));
+                Optional<HolderSet.Named<Enchantment>> optional = MinecraftServer.getServer().registryAccess().registryOrThrow(Registries.ENCHANTMENT).getTag(EnchantmentTags.IN_ENCHANTING_TABLE);
+                List<EnchantmentInstance> list;
+                if (optional.isEmpty()) {
+                    list = List.of();
+                } else {
+                    list = EnchantmentHelper.selectEnchantment(random, itemStack, costs[j], ((HolderSet.Named) optional.get()).stream());
+                    if (itemStack.is(Items.BOOK) && list.size() > 1) {
+                        list.remove(random.nextInt(list.size()));
+                    }
                 }
+
                 if (list != null && !list.isEmpty()) {
                     EnchantmentInstance weightedRandomEnchant = list.get(random.nextInt(list.size()));
-                    enchantClue[j] = BuiltInRegistries.ENCHANTMENT.getId(weightedRandomEnchant.enchantment);
+                    enchantClue[j] = registry.getId(weightedRandomEnchant.enchantment);
                     levelClue[j] = weightedRandomEnchant.level;
                 }
             }
         }
         for (j = 0; j < 3; ++j) {
-            org.bukkit.enchantments.Enchantment enchantment = (enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(BuiltInRegistries.ENCHANTMENT.byId(enchantClue[j])))) : null;
+            org.bukkit.enchantments.Enchantment enchantment = (enchantClue[j] >= 0) ? CraftEnchantment.minecraftHolderToBukkit(registry.byId(enchantClue[j])) : null;
             offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, levelClue[j], costs[j]) : null;
         }
         return offers;
