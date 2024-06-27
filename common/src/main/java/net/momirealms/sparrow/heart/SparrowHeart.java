@@ -1,10 +1,12 @@
 package net.momirealms.sparrow.heart;
 
-import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
-import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
 import net.momirealms.sparrow.heart.exception.UnsupportedVersionException;
 import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
+import net.momirealms.sparrow.heart.feature.bossbar.BossBarColor;
+import net.momirealms.sparrow.heart.feature.bossbar.BossBarOverlay;
+import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
+import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
 import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
 import net.momirealms.sparrow.heart.feature.team.TeamColor;
 import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
@@ -17,16 +19,13 @@ import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.UUID;
 
 public abstract class SparrowHeart {
 
     public static SparrowHeart getInstance() {
         return SingletonHolder.INSTANCE;
     }
-
-    public abstract void sendDebugMarker(Player player, Location location, String message, int duration, int color);
-
-    public abstract String getBiomeResourceLocation(Location location);
 
     private static class SingletonHolder {
         private static final SparrowHeart INSTANCE = getHeart();
@@ -74,6 +73,10 @@ public abstract class SparrowHeart {
         }
     }
 
+    public abstract void sendDebugMarker(Player player, Location location, String message, int duration, int color);
+
+    public abstract String getBiomeResourceLocation(Location location);
+
     public abstract void sendActionBar(Player player, String json);
 
     public abstract void sendTitle(Player player, String titleJson, String subTitleJson, int fadeInTicks, int stayTicks, int fadeOutTicks);
@@ -107,4 +110,13 @@ public abstract class SparrowHeart {
     public abstract void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs);
 
     public abstract FakeArmorStand createFakeArmorStand(Location location);
+
+    public abstract void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen);
+
+    public abstract void removeBossBar(Player player, UUID uuid);
+
+    public abstract void updateBossBarName(Player player, UUID uuid, String displayName);
+
+    public abstract void updateBossBarProgress(Player player, UUID uuid, float progress);
+
 }

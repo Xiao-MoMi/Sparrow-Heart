@@ -10,7 +10,9 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
@@ -24,6 +26,7 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -37,13 +40,16 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
-import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
-import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
+import net.momirealms.sparrow.heart.feature.bossbar.BossBarColor;
+import net.momirealms.sparrow.heart.feature.bossbar.BossBarOverlay;
+import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
+import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
 import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
 import net.momirealms.sparrow.heart.feature.team.TeamColor;
 import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
+import net.momirealms.sparrow.heart.util.BossBarUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
@@ -60,11 +66,32 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Field;
 import java.util.*;
 
 public class Heart extends SparrowHeart {
 
     private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().registryOrThrow(Registries.BIOME);
+    private final Enum<?> addBossBarOperation;
+    private final Enum<?> updateBossBarNameOperation;
+    private final Enum<?> updateBossBarProgressOperation;
+
+    public Heart() {
+        try {
+            Class<?> cls = Class.forName("net.minecraft.network.protocol.game.ClientboundBossEventPacket$OperationType");
+            Field fieldAdd = cls.getDeclaredField("ADD");
+            fieldAdd.setAccessible(true);
+            addBossBarOperation = (Enum<?>) fieldAdd.get(null);
+            Field fieldUpdateProgress = cls.getDeclaredField("UPDATE_PROGRESS");
+            fieldUpdateProgress.setAccessible(true);
+            updateBossBarProgressOperation = (Enum<?>) fieldUpdateProgress.get(null);
+            Field fieldUpdateName = cls.getDeclaredField("UPDATE_NAME");
+            fieldUpdateName.setAccessible(true);
+            updateBossBarNameOperation = (Enum<?>) fieldUpdateName.get(null);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get add boss bar operation", e);
+        }
+    }
 
     @Override
     public void sendActionBar(Player player, String json) {
@@ -362,5 +389,44 @@ public class Heart extends SparrowHeart {
     @Override
     public FakeArmorStand createFakeArmorStand(Location location) {
         return new SparrowArmorStand(location);
+    }
+
+    @Override
+    public void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
+        buf.writeUUID(uuid);
+        buf.writeEnum(addBossBarOperation);
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, CraftChatMessage.fromJSON(displayName));
+        buf.writeFloat(progress);
+        buf.writeEnum(BossEvent.BossBarColor.valueOf(color.name()));
+        buf.writeEnum(BossEvent.BossBarOverlay.valueOf(overlay.name()));
+        buf.writeByte(BossBarUtils.encodeProperties(darkenScreen, playBossMusic, createWorldFog));
+        ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void removeBossBar(Player player, UUID uuid) {
+        ((CraftPlayer) player).getHandle().connection.send(ClientboundBossEventPacket.createRemovePacket(uuid));
+    }
+
+    @Override
+    public void updateBossBarName(Player player, UUID uuid, String displayName) {
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
+        buf.writeUUID(uuid);
+        buf.writeEnum(updateBossBarNameOperation);
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, CraftChatMessage.fromJSON(displayName));
+        ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public void updateBossBarProgress(Player player, UUID uuid, float progress) {
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
+        buf.writeUUID(uuid);
+        buf.writeEnum(updateBossBarProgressOperation);
+        buf.writeFloat(progress);
+        ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
     }
 }
