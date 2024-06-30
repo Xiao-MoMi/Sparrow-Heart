@@ -25,6 +25,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
@@ -50,6 +51,7 @@ import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R2.entity.CraftFishHook;
 import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_19_R2.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftContainer;
@@ -57,6 +59,7 @@ import org.bukkit.craftbukkit.v1_19_R2.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_19_R2.util.CraftChatMessage;
 import org.bukkit.craftbukkit.v1_19_R2.util.CraftNamespacedKey;
 import org.bukkit.enchantments.EnchantmentOffer;
+import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -71,6 +74,7 @@ public class Heart extends SparrowHeart {
     private final Enum<?> addBossBarOperation;
     private final Enum<?> updateBossBarNameOperation;
     private final Enum<?> updateBossBarProgressOperation;
+    private final EntityDataAccessor<Boolean> dataBiting;
 
     public Heart() {
         try {
@@ -86,6 +90,13 @@ public class Heart extends SparrowHeart {
             updateBossBarNameOperation = (Enum<?>) fieldUpdateName.get(null);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get add boss bar operation", e);
+        }
+        try {
+            Field dataBitingField = FishingHook.class.getDeclaredField("DATA_BITING");
+            dataBitingField.setAccessible(true);
+            dataBiting = (EntityDataAccessor<Boolean>) dataBitingField.get(null);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to get hook biting state", e);
         }
     }
 
@@ -418,5 +429,11 @@ public class Heart extends SparrowHeart {
         buf.writeFloat(progress);
         ClientboundBossEventPacket packet = new ClientboundBossEventPacket(buf);
         ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public boolean isFishingHookBit(FishHook hook) {
+        FishingHook fishingHook = ((CraftFishHook) hook).getHandle();
+        return fishingHook.getEntityData().get(dataBiting);
     }
 }

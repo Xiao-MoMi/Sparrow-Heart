@@ -6,7 +6,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.*;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -29,16 +28,15 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
-import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.EnchantingTableBlock;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
@@ -58,13 +56,14 @@ import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.entity.CraftFishHook;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
-import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.enchantments.EnchantmentOffer;
+import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -79,6 +78,7 @@ public class Heart extends SparrowHeart {
     private final Enum<?> addBossBarOperation;
     private final Enum<?> updateBossBarNameOperation;
     private final Enum<?> updateBossBarProgressOperation;
+    private final EntityDataAccessor<Boolean> dataBiting;
 
     public Heart() {
         try {
@@ -94,6 +94,13 @@ public class Heart extends SparrowHeart {
             updateBossBarNameOperation = (Enum<?>) fieldUpdateName.get(null);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get add boss bar operation", e);
+        }
+        try {
+            Field dataBitingField = FishingHook.class.getDeclaredField("DATA_BITING");
+            dataBitingField.setAccessible(true);
+            dataBiting = (EntityDataAccessor<Boolean>) dataBitingField.get(null);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to get hook biting state", e);
         }
     }
 
@@ -440,5 +447,11 @@ public class Heart extends SparrowHeart {
         buf.writeFloat(progress);
         ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
         ((CraftPlayer) player).getHandle().connection.send(packet);
+    }
+
+    @Override
+    public boolean isFishingHookBit(FishHook hook) {
+        FishingHook fishingHook = ((CraftFishHook) hook).getHandle();
+        return fishingHook.getEntityData().get(dataBiting);
     }
 }

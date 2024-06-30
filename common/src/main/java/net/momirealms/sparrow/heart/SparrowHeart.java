@@ -13,6 +13,7 @@ import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.enchantments.EnchantmentOffer;
+import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -112,5 +113,7 @@ public abstract class SparrowHeart {
     public abstract void updateBossBarName(Player player, UUID uuid, String displayName);
 
     public abstract void updateBossBarProgress(Player player, UUID uuid, float progress);
+
+    public abstract boolean isFishingHookBit(FishHook hook);
 
 }
