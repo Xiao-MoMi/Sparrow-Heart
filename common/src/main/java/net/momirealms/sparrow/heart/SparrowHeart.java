@@ -116,4 +116,5 @@ public abstract class SparrowHeart {
 
     public abstract boolean isFishingHookBit(FishHook hook);
 
+    public abstract List<ItemStack> getFishingLoot(Player player, FishHook hook, ItemStack rod);
 }
