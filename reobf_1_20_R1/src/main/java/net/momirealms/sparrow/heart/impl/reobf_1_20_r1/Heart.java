@@ -24,6 +24,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.projectile.FishingHook;
@@ -466,5 +467,11 @@ public class Heart extends SparrowHeart {
         LootTable loottable = level.getServer().getLootData().getLootTable(BuiltInLootTables.FISHING);
         List<net.minecraft.world.item.ItemStack> list = loottable.getRandomItems(lootparams);
         return list.stream().filter(itemStack -> itemStack != null && !itemStack.isEmpty()).map(net.minecraft.world.item.ItemStack::getBukkitStack).toList();
+    }
+
+    @Override
+    public void useItem(Player player, HandSlot handSlot, @Nullable ItemStack itemStack) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        serverPlayer.gameMode.useItem(serverPlayer, ((CraftWorld) player.getWorld()).getHandle(), Optional.ofNullable(itemStack).map(stack -> ((CraftItemStack) itemStack).handle).orElse(serverPlayer.getItemBySlot(EquipmentSlot.valueOf(handSlot.name() + "HAND"))), InteractionHand.valueOf(handSlot.name() + "_HAND"));
     }
 }

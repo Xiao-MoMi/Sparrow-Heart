@@ -17,6 +17,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
 import java.util.List;
@@ -115,6 +116,8 @@ public abstract class SparrowHeart {
     public abstract void updateBossBarProgress(Player player, UUID uuid, float progress);
 
     public abstract boolean isFishingHookBit(FishHook hook);
+
+    public abstract void useItem(Player player, HandSlot handSlot, @Nullable ItemStack itemStack);
 
     public abstract List<ItemStack> getFishingLoot(Player player, FishHook hook, ItemStack rod);
 }
