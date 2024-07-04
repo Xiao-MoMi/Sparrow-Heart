@@ -469,4 +469,9 @@ public class Heart extends SparrowHeart {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         serverPlayer.gameMode.useItem(serverPlayer, ((CraftWorld) player.getWorld()).getHandle(), Optional.ofNullable(itemStack).map(stack -> ((CraftItemStack) itemStack).handle).orElse(serverPlayer.getItemBySlot(EquipmentSlot.valueOf(handSlot.name() + "HAND"))), InteractionHand.valueOf(handSlot.name() + "_HAND"));
     }
+
+    @Override
+    public Map<String, Integer> itemEnchantmentsToMap(Object item) {
+        return Map.of();
+    }
 }

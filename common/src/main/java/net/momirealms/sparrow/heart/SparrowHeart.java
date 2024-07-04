@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public abstract class SparrowHeart {
@@ -120,4 +121,6 @@ public abstract class SparrowHeart {
     public abstract void useItem(Player player, HandSlot handSlot, @Nullable ItemStack itemStack);
 
     public abstract List<ItemStack> getFishingLoot(Player player, FishHook hook, ItemStack rod);
+
+    public abstract Map<String, Integer> itemEnchantmentsToMap(Object item);
 }

@@ -2,10 +2,12 @@ package net.momirealms.sparrow.heart.impl.reobf_1_20_r3;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -18,6 +20,7 @@ import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -471,5 +474,10 @@ public class Heart extends SparrowHeart {
     public void useItem(Player player, HandSlot handSlot, @Nullable ItemStack itemStack) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         serverPlayer.gameMode.useItem(serverPlayer, ((CraftWorld) player.getWorld()).getHandle(), Optional.ofNullable(itemStack).map(stack -> ((CraftItemStack) itemStack).handle).orElse(serverPlayer.getItemBySlot(EquipmentSlot.valueOf(handSlot.name() + "HAND"))), InteractionHand.valueOf(handSlot.name() + "_HAND"));
+    }
+
+    @Override
+    public Map<String, Integer> itemEnchantmentsToMap(Object item) {
+        return Map.of();
     }
 }
