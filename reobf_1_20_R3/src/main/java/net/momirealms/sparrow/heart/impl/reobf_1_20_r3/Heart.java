@@ -108,7 +108,7 @@ public class Heart extends SparrowHeart {
             throw new RuntimeException("Failed to get add boss bar operation", e);
         }
         try {
-            Field dataBitingField = FishingHook.class.getDeclaredField("DATA_BITING");
+            Field dataBitingField = FishingHook.class.getDeclaredField("h");
             dataBitingField.setAccessible(true);
             dataBiting = (EntityDataAccessor<Boolean>) dataBitingField.get(null);
         } catch (ReflectiveOperationException e) {
