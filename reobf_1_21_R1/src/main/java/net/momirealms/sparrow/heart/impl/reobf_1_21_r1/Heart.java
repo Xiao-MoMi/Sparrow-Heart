@@ -9,7 +9,9 @@ import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
@@ -86,6 +88,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class Heart extends SparrowHeart {
@@ -95,6 +98,7 @@ public class Heart extends SparrowHeart {
     private final Enum<?> updateBossBarNameOperation;
     private final Enum<?> updateBossBarProgressOperation;
     private final EntityDataAccessor<Boolean> dataBiting;
+    private final Method sendPacketImmediateMethod;
 
     public Heart() {
         try {
@@ -118,6 +122,20 @@ public class Heart extends SparrowHeart {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get hook biting state", e);
         }
+        try {
+            sendPacketImmediateMethod = Connection.class.getDeclaredMethod("sendPacket", Packet.class, PacketSendListener.class, boolean.class);
+            sendPacketImmediateMethod.setAccessible(true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to get send packet method", e);
+        }
+    }
+
+    private void sendPacketImmediately(ServerPlayer serverPlayer, Packet<ClientGamePacketListener> packet) {
+        try {
+            sendPacketImmediateMethod.invoke(serverPlayer.connection.connection, packet, null, true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to send packet", e);
+        }
     }
 
     @Override
@@ -132,7 +150,6 @@ public class Heart extends SparrowHeart {
     public void sendTitle(Player player, @Nullable String titleJson, @Nullable String subTitleJson, int fadeInTicks, int stayTicks, int fadeOutTicks) {
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer serverPlayer = craftPlayer.getHandle();
-
         ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(new ClientboundSetTitlesAnimationPacket(fadeInTicks, stayTicks, fadeOutTicks));
         if (titleJson != null) {
@@ -144,7 +161,7 @@ public class Heart extends SparrowHeart {
             packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(CraftChatMessage.fromJSON(subTitleJson))));
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
-        serverPlayer.connection.send(bundlePacket);
+        sendPacketImmediately(serverPlayer, bundlePacket);
     }
 
     @Override

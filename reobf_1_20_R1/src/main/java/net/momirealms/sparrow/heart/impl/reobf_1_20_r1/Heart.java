@@ -9,7 +9,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.*;
@@ -77,6 +79,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 
 public class Heart extends SparrowHeart {
@@ -86,6 +89,7 @@ public class Heart extends SparrowHeart {
     private final Enum<?> updateBossBarNameOperation;
     private final Enum<?> updateBossBarProgressOperation;
     private final EntityDataAccessor<Boolean> dataBiting;
+    private final Method sendPacketImmediateMethod;
 
     public Heart() {
         try {
@@ -108,6 +112,20 @@ public class Heart extends SparrowHeart {
             dataBiting = (EntityDataAccessor<Boolean>) dataBitingField.get(null);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get hook biting state", e);
+        }
+        try {
+            sendPacketImmediateMethod = Connection.class.getDeclaredMethod("sendPacket", Packet.class, PacketSendListener.class, Boolean.class);
+            sendPacketImmediateMethod.setAccessible(true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to get send packet method", e);
+        }
+    }
+
+    private void sendPacketImmediately(ServerPlayer serverPlayer, Packet<ClientGamePacketListener> packet) {
+        try {
+            sendPacketImmediateMethod.invoke(serverPlayer.connection.connection, packet, null, true);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to send packet", e);
         }
     }
 
@@ -134,7 +152,7 @@ public class Heart extends SparrowHeart {
             packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(subTitleJson))));
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
-        serverPlayer.connection.send(bundlePacket);
+        sendPacketImmediately(serverPlayer, bundlePacket);
     }
 
     @Override
