@@ -91,10 +91,12 @@ public class SparrowArmorStand implements FakeArmorStand {
             entityData.set(new EntityDataAccessor<>(15, EntityDataSerializers.BYTE), (byte) 0x01);
         }
         ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, entityData, false);
-        ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
         serverPlayer.connection.send(entityPacket);
         serverPlayer.connection.send(dataPacket);
-        serverPlayer.connection.send(equipmentPacket);
+        if (!equipments.isEmpty()) {
+            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
+            serverPlayer.connection.send(equipmentPacket);
+        }
     }
 
     @Override
