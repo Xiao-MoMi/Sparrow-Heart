@@ -392,7 +392,7 @@ public class Heart extends SparrowHeart {
         float pitch = location.getPitch() * ROTATION_FACTOR;
         for (int entityID : entityIDs) {
             FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            buf.writeInt(entityID);
+            buf.writeVarInt(entityID);
             buf.writeDouble(location.getX());
             buf.writeDouble(location.getY());
             buf.writeDouble(location.getZ());
