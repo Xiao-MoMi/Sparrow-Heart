@@ -1,6 +1,7 @@
 package net.momirealms.sparrow.heart.impl.reobf_1_21_r1;
 
 import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.JavaOps;
 import io.netty.buffer.Unpooled;
 import io.papermc.paper.block.fluid.FluidData;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -16,12 +17,14 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.PacketType;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.RegistryFixedCodec;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -40,6 +43,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -85,6 +89,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -312,19 +317,10 @@ public class Heart extends SparrowHeart {
             UUID uuid = UUID.randomUUID();
             int entityID = SelfIncreaseEntityID.getAndIncrease();
             ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
-                    entityID,
-                    uuid,
-                    location.getX(),
-                    location.getY(),
-                    location.getZ(),
-                    0,
-                    0,
-                    EntityType.SLIME,
-                    0,
-                    Vec3.ZERO,
-                    0
+                    entityID, uuid,
+                    location.getX(), location.getY(), location.getZ(), 0, 0,
+                    EntityType.SLIME, 0, Vec3.ZERO, 0
             );
-
             ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
                     entityID,
                     List.of(
@@ -519,5 +515,42 @@ public class Heart extends SparrowHeart {
             map.put(enchantmentHolder.getRegisteredName(), level);
         }
         return map;
+    }
+
+    @Override
+    public int dropFakeItem(Player player, ItemStack itemStack, Location location) {
+        UUID uuid = UUID.randomUUID();
+        int entityID = SelfIncreaseEntityID.getAndIncrease();
+        ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
+                entityID, uuid,
+                location.getX(), location.getY(), location.getZ(), 0, 0,
+                EntityType.ITEM,
+                0, Vec3.ZERO, 0
+        );
+        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
+                entityID,
+                List.of(
+                        SynchedEntityData.DataValue.create(new EntityDataAccessor<>(8, EntityDataSerializers.ITEM_STACK), CraftItemStack.asNMSCopy(itemStack)),
+                        SynchedEntityData.DataValue.create(new EntityDataAccessor<>(5, EntityDataSerializers.BOOLEAN), true)
+                )
+        );
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(List.of(entityPacket, dataPacket));
+        ((CraftPlayer)player).getHandle().connection.send(bundlePacket);
+        return entityID;
+    }
+
+    @Override
+    public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
+        int x = (int) vector.getX() * 8000;
+        int y = (int) vector.getY() * 8000;
+        int z = (int) vector.getZ() * 8000;
+        for (int entityID : entityIDs) {
+            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, new Vec3(x,y,z));
+            packets.add(packet);
+        }
+        ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
+        serverPlayer.connection.send(bundlePacket);
     }
 }

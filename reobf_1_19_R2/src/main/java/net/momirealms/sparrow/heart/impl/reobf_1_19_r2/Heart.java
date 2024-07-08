@@ -76,6 +76,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -492,5 +493,39 @@ public class Heart extends SparrowHeart {
     @Override
     public Map<String, Integer> itemEnchantmentsToMap(Object item) {
         return Map.of();
+    }
+
+    @Override
+    public int dropFakeItem(Player player, ItemStack itemStack, Location location) {
+        UUID uuid = UUID.randomUUID();
+        int entityID = SelfIncreaseEntityID.getAndIncrease();
+        ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
+                entityID, uuid,
+                location.getX(), location.getY(), location.getZ(), 0, 0,
+                EntityType.ITEM,
+                0, Vec3.ZERO, 0
+        );
+        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
+                entityID,
+                List.of(
+                        SynchedEntityData.DataValue.create(new EntityDataAccessor<>(8, EntityDataSerializers.ITEM_STACK), CraftItemStack.asNMSCopy(itemStack)),
+                        SynchedEntityData.DataValue.create(new EntityDataAccessor<>(5, EntityDataSerializers.BOOLEAN), true)
+                )
+        );
+        ((CraftPlayer)player).getHandle().connection.send(entityPacket);
+        ((CraftPlayer)player).getHandle().connection.send(dataPacket);
+        return entityID;
+    }
+
+    @Override
+    public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        int x = (int) vector.getX() * 8000;
+        int y = (int) vector.getY() * 8000;
+        int z = (int) vector.getZ() * 8000;
+        for (int entityID : entityIDs) {
+            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, new Vec3(x,y,z));
+            serverPlayer.connection.send(packet);
+        }
     }
 }

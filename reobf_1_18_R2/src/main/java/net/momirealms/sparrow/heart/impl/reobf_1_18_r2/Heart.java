@@ -28,6 +28,7 @@ import net.minecraft.world.BossEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -56,6 +57,7 @@ import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
 import net.momirealms.sparrow.heart.feature.team.TeamColor;
 import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import net.momirealms.sparrow.heart.util.BossBarUtils;
+import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -76,6 +78,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -491,5 +494,42 @@ public class Heart extends SparrowHeart {
     @Override
     public Map<String, Integer> itemEnchantmentsToMap(Object item) {
         return Map.of();
+    }
+
+    @Override
+    public int dropFakeItem(Player player, ItemStack itemStack, Location location) {
+        UUID uuid = UUID.randomUUID();
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        int entityID = SelfIncreaseEntityID.getAndIncrease();
+        ItemEntity item = new ItemEntity(EntityType.ITEM, serverPlayer.getLevel());
+        ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
+                entityID, uuid,
+                location.getX(), location.getY(), location.getZ(), 0, 0,
+                EntityType.ITEM,
+                0, Vec3.ZERO
+        );
+        SynchedEntityData entityData = new SynchedEntityData(item);
+        entityData.set(new EntityDataAccessor<>(8, EntityDataSerializers.ITEM_STACK), CraftItemStack.asNMSCopy(itemStack));
+        entityData.set(new EntityDataAccessor<>(5, EntityDataSerializers.BOOLEAN), true);
+        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
+                entityID,
+                entityData,
+                false
+        );
+        serverPlayer.connection.send(entityPacket);
+        serverPlayer.connection.send(dataPacket);
+        return entityID;
+    }
+
+    @Override
+    public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        int x = (int) vector.getX() * 8000;
+        int y = (int) vector.getY() * 8000;
+        int z = (int) vector.getZ() * 8000;
+        for (int entityID : entityIDs) {
+            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, new Vec3(x,y,z));
+            serverPlayer.connection.send(packet);
+        }
     }
 }

@@ -17,6 +17,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Constructor;
@@ -106,6 +107,8 @@ public abstract class SparrowHeart {
 
     public abstract void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs);
 
+    public abstract void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs);
+
     public abstract FakeArmorStand createFakeArmorStand(Location location);
 
     public abstract void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen);
@@ -123,4 +126,6 @@ public abstract class SparrowHeart {
     public abstract List<ItemStack> getFishingLoot(Player player, FishHook hook, ItemStack rod);
 
     public abstract Map<String, Integer> itemEnchantmentsToMap(Object item);
+
+    public abstract int dropFakeItem(Player player, ItemStack itemStack, Location location);
 }
