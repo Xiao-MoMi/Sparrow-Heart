@@ -1,9 +1,7 @@
 package net.momirealms.sparrow.heart.impl.reobf_1_21_r1;
 
 import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.JavaOps;
 import io.netty.buffer.Unpooled;
-import io.papermc.paper.block.fluid.FluidData;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
@@ -17,15 +15,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.PacketType;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.RegistryFixedCodec;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -43,7 +38,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.CustomModelData;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
@@ -71,10 +65,8 @@ import net.momirealms.sparrow.heart.util.BossBarUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.entity.CraftFishHook;
@@ -84,6 +76,7 @@ import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
@@ -543,11 +536,9 @@ public class Heart extends SparrowHeart {
     public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
-        int x = (int) vector.getX() * 8000;
-        int y = (int) vector.getY() * 8000;
-        int z = (int) vector.getZ() * 8000;
+        Vec3 vec3 = CraftVector.toNMS(vector);
         for (int entityID : entityIDs) {
-            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, new Vec3(x,y,z));
+            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
             packets.add(packet);
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);

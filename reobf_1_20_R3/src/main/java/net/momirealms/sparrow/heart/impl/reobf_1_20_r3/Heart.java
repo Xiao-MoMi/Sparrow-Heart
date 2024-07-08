@@ -2,12 +2,10 @@ package net.momirealms.sparrow.heart.impl.reobf_1_20_r3;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -22,7 +20,6 @@ import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -75,6 +72,7 @@ import org.bukkit.craftbukkit.v1_20_R3.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_20_R3.util.CraftChatMessage;
 import org.bukkit.craftbukkit.v1_20_R3.util.CraftLocation;
 import org.bukkit.craftbukkit.v1_20_R3.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_20_R3.util.CraftVector;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.FishHook;
@@ -526,11 +524,9 @@ public class Heart extends SparrowHeart {
     public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>();
-        int x = (int) vector.getX() * 8000;
-        int y = (int) vector.getY() * 8000;
-        int z = (int) vector.getZ() * 8000;
+        Vec3 vec3 = CraftVector.toNMS(vector);
         for (int entityID : entityIDs) {
-            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, new Vec3(x,y,z));
+            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
             packets.add(packet);
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);

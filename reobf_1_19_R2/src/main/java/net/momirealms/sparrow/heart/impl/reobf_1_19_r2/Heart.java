@@ -520,11 +520,9 @@ public class Heart extends SparrowHeart {
     @Override
     public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-        int x = (int) vector.getX() * 8000;
-        int y = (int) vector.getY() * 8000;
-        int z = (int) vector.getZ() * 8000;
+        Vec3 vec3 = CraftVector.toNMS(vector);
         for (int entityID : entityIDs) {
-            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, new Vec3(x,y,z));
+            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
             serverPlayer.connection.send(packet);
         }
     }

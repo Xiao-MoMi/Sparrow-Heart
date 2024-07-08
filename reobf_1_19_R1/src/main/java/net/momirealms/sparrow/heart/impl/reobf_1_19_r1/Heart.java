@@ -63,17 +63,16 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.craftbukkit.v1_19_R1.CraftWorld;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftFishHook;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftItem;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_19_R1.event.CraftEventFactory;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftContainer;
 import org.bukkit.craftbukkit.v1_19_R1.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.v1_19_R1.util.CraftChatMessage;
 import org.bukkit.craftbukkit.v1_19_R1.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_19_R1.util.CraftVector;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.FishHook;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -524,11 +523,9 @@ public class Heart extends SparrowHeart {
     @Override
     public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-        int x = (int) vector.getX() * 8000;
-        int y = (int) vector.getY() * 8000;
-        int z = (int) vector.getZ() * 8000;
+        Vec3 vec3 = CraftVector.toNMS(vector);
         for (int entityID : entityIDs) {
-            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, new Vec3(x,y,z));
+            ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
             serverPlayer.connection.send(packet);
         }
     }
