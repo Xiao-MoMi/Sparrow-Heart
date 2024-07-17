@@ -3,7 +3,6 @@ package net.momirealms.sparrow.heart.impl.reobf_1_19_r2;
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -14,7 +13,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -37,6 +35,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.level.material.LavaFluid;
+import net.minecraft.world.level.material.WaterFluid;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootContext;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -50,6 +51,7 @@ import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarColor;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarOverlay;
 import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
 import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
@@ -59,6 +61,7 @@ import net.momirealms.sparrow.heart.util.BossBarUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
@@ -120,6 +123,10 @@ public class Heart extends SparrowHeart {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get send packet method", e);
         }
+        SparrowFluidData.register(LavaFluid.Source.class, SparrowFallingFluidData::new);
+        SparrowFluidData.register(WaterFluid.Source.class, SparrowFallingFluidData::new);
+        SparrowFluidData.register(LavaFluid.Flowing.class, SparrowFlowingFluidData::new);
+        SparrowFluidData.register(WaterFluid.Flowing.class, SparrowFlowingFluidData::new);
     }
 
     private void sendPacketImmediately(ServerPlayer serverPlayer, Packet<ClientGamePacketListener> packet) {
@@ -525,5 +532,12 @@ public class Heart extends SparrowHeart {
             ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
             serverPlayer.connection.send(packet);
         }
+    }
+
+    @Override
+    public FluidData getFluidData(Location location) {
+        World world = location.getWorld();
+        FluidState state = ((CraftWorld) world).getHandle().getFluidState(new BlockPos(location.getX(), location.getY(), location.getZ()));
+        return SparrowFluidData.createData(state);
     }
 }
