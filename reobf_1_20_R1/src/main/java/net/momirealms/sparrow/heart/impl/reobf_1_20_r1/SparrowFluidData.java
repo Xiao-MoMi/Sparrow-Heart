@@ -1,14 +1,17 @@
 package net.momirealms.sparrow.heart.impl.reobf_1_20_r1;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftFluid;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftVector;
+import org.bukkit.Registry;
+import org.bukkit.craftbukkit.v1_20_R1.CraftRegistry;
+import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R1.util.CraftLocation;
+import org.bukkit.craftbukkit.v1_20_R1.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_20_R1.util.CraftVector;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,7 +44,18 @@ public class SparrowFluidData implements FluidData {
 
     @Override
     public final @NotNull org.bukkit.Fluid getFluidType() {
-        return CraftFluid.minecraftToBukkit(this.state.getType());
+        return minecraftToBukkit(this.state.getType());
+    }
+
+    private org.bukkit.Fluid minecraftToBukkit(net.minecraft.world.level.material.Fluid minecraft) {
+        Preconditions.checkArgument(minecraft != null);
+
+        net.minecraft.core.Registry<net.minecraft.world.level.material.Fluid> registry = CraftRegistry.getMinecraftRegistry(Registries.FLUID);
+        org.bukkit.Fluid bukkit = Registry.FLUID.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft).orElseThrow().location()));
+
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit;
     }
 
     @Override

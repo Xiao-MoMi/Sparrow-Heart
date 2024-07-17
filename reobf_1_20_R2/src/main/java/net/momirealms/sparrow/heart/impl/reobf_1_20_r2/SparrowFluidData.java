@@ -5,10 +5,10 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftFluid;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftVector;
+import org.bukkit.craftbukkit.v1_20_R2.CraftFluid;
+import org.bukkit.craftbukkit.v1_20_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_20_R2.util.CraftLocation;
+import org.bukkit.craftbukkit.v1_20_R2.util.CraftVector;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 

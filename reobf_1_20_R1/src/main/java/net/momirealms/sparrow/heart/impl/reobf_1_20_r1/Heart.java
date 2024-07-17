@@ -3,6 +3,8 @@ package net.momirealms.sparrow.heart.impl.reobf_1_20_r1;
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
 import net.minecraft.ChatFormatting;
+import net.minecraft.advancements.*;
+import net.minecraft.network.protocol.game.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;

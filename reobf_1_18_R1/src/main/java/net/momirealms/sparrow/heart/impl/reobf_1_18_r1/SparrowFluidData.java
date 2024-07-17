@@ -1,14 +1,17 @@
 package net.momirealms.sparrow.heart.impl.reobf_1_18_r1;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftFluid;
-import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.util.CraftLocation;
-import org.bukkit.craftbukkit.util.CraftVector;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
+import org.bukkit.craftbukkit.v1_18_R1.CraftWorld;
+import org.bukkit.craftbukkit.v1_18_R1.util.CraftVector;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,7 +44,20 @@ public class SparrowFluidData implements FluidData {
 
     @Override
     public final @NotNull org.bukkit.Fluid getFluidType() {
-        return CraftFluid.minecraftToBukkit(this.state.getType());
+        return minecraftToBukkit(this.state.getType());
+    }
+
+    private org.bukkit.Fluid minecraftToBukkit(net.minecraft.world.level.material.Fluid minecraft) {
+        Preconditions.checkArgument(minecraft != null);
+
+        net.minecraft.core.Registry<net.minecraft.world.level.material.Fluid> registry = MinecraftServer.getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.FLUID_REGISTRY);
+
+        ResourceLocation location = registry.getResourceKey(minecraft).orElseThrow().location();
+        org.bukkit.Fluid bukkit = Registry.FLUID.get(new NamespacedKey(location.getNamespace(), location.getPath()));
+
+        Preconditions.checkArgument(bukkit != null);
+
+        return bukkit;
     }
 
     @Override
@@ -49,7 +65,7 @@ public class SparrowFluidData implements FluidData {
         Preconditions.checkArgument(location.getWorld() != null, "Cannot compute flow direction on world-less location");
         return CraftVector.toBukkit(this.state.getFlow(
                 ((CraftWorld) location.getWorld()).getHandle(),
-                CraftLocation.toBlockPosition(location)
+                new BlockPos(location.getX(), location.getY(), location.getZ())
         ));
     }
 
@@ -61,7 +77,7 @@ public class SparrowFluidData implements FluidData {
     @Override
     public float computeHeight(@NotNull final Location location) {
         Preconditions.checkArgument(location.getWorld() != null, "Cannot compute height on world-less location");
-        return this.state.getHeight(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toBlockPosition(location));
+        return this.state.getHeight(((CraftWorld) location.getWorld()).getHandle(), new BlockPos(location.getX(), location.getY(), location.getZ()));
     }
 
     @Override

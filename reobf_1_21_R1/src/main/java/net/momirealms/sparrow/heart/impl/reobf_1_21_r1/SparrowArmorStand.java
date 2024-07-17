@@ -18,6 +18,7 @@ import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
+import net.minecraft.network.protocol.game.*;
 
 import java.util.ArrayList;
 import java.util.List;

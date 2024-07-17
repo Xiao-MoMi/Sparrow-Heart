@@ -2,6 +2,7 @@ package net.momirealms.sparrow.heart.impl.reobf_1_20_r1;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.network.protocol.game.*;
 
 public class SparrowArmorStand implements FakeArmorStand {
 
