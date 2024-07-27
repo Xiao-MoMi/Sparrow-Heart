@@ -49,7 +49,7 @@ public abstract class SparrowHeart {
                 case "1.19.4" -> packageName = "reobf_1_19_r3";
                 case "1.19.3" -> packageName = "reobf_1_19_r2";
                 case "1.19.2", "1.19.1" -> packageName = "reobf_1_19_r1";
-                case "1.18.2" -> packageName = "reobf_1_18_R2";
+                case "1.18.2" -> packageName = "reobf_1_18_r2";
                 case "1.18.1", "1.18" -> packageName = "reobf_1_18_r1";
                 case "1.17.1" -> packageName = "reobf_1_17_r1";
                 default -> throw new UnsupportedVersionException();
