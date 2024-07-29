@@ -250,11 +250,9 @@ public class Heart extends SparrowHeart {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ClientboundAnimatePacket packet = new ClientboundAnimatePacket(serverPlayer, slot.getId());
         serverPlayer.connection.send(packet);
-        ChunkMap.TrackedEntity tracker = serverPlayer.tracker;
-        if (tracker != null) {
-            for (ServerPlayerConnection connection : tracker.seenBy) {
-                connection.send(packet);
-            }
+        ChunkMap.TrackedEntity tracker = serverPlayer.moonrise$getTrackedEntity();
+        for (ServerPlayerConnection connection : tracker.seenBy) {
+            connection.send(packet);
         }
     }
 
@@ -388,7 +386,6 @@ public class Heart extends SparrowHeart {
         ClientboundSetPlayerTeamPacket teamPacket = ClientboundSetPlayerTeamPacket.createAddOrModifyPacket(team, false);
         serverPlayer.connection.send(teamPacket);
     }
-
 
     @Override
     public void removeClientSideEntity(Player player, int... entityIDs) {
