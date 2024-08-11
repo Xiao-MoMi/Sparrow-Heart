@@ -74,23 +74,24 @@ public class SparrowArmorStand implements FakeArmorStand {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ArmorStand armorStand = new ArmorStand(EntityType.ARMOR_STAND, serverPlayer.getLevel());
         ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
-                armorStand.getId(), armorStand.getUUID(),
+                entityID, uuid,
                 location.getX(), location.getY(), location.getZ(), location.getPitch(), location.getYaw(),
                 EntityType.ARMOR_STAND, 0,
                 Vec3.ZERO
         );
         SynchedEntityData entityData = new SynchedEntityData(armorStand);
+        armorStand.setInvisible(true);
         if (invisible) {
-            entityData.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20));
+            entityData.define(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20));
         }
         if (name != null) {
-            entityData.set(new EntityDataAccessor<>(3, EntityDataSerializers.BOOLEAN), true);
-            entityData.set(new EntityDataAccessor<>(2, EntityDataSerializers.OPTIONAL_COMPONENT), Optional.of(CraftChatMessage.fromJSON(name)));
+            entityData.define(new EntityDataAccessor<>(3, EntityDataSerializers.BOOLEAN), true);
+            entityData.define(new EntityDataAccessor<>(2, EntityDataSerializers.OPTIONAL_COMPONENT), Optional.of(CraftChatMessage.fromJSON(name)));
         }
         if (small) {
-            entityData.set(new EntityDataAccessor<>(15, EntityDataSerializers.BYTE), (byte) 0x01);
+            entityData.define(new EntityDataAccessor<>(15, EntityDataSerializers.BYTE), (byte) 0x01);
         }
-        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, entityData, false);
+        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, entityData, true);
         serverPlayer.connection.send(entityPacket);
         serverPlayer.connection.send(dataPacket);
         if (!equipments.isEmpty()) {
