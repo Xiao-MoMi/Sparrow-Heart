@@ -254,7 +254,7 @@ public class Heart extends SparrowHeart {
         RandomSource random = RandomSource.create();
         DataSlot enchantmentSeed = DataSlot.standalone();
         random.setSeed(enchantmentSeed.get());
-        enchantmentSeed.set(player.getEnchantmentSeed());
+        enchantmentSeed.set(((CraftPlayer) player).getHandle().getEnchantmentSeed());
         net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
         int[] costs = new int[3];
         int[] enchantClue = new int[]{-1, -1, -1};
@@ -312,12 +312,12 @@ public class Heart extends SparrowHeart {
                     0
             );
             SynchedEntityData entityData = new SynchedEntityData(slime);
-            entityData.set(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40));
-            entityData.set(new EntityDataAccessor<>(16, EntityDataSerializers.INT), 2);
+            entityData.define(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20 | 0x40));
+            entityData.define(new EntityDataAccessor<>(16, EntityDataSerializers.INT), 2);
             ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
                     slime.getId(),
                     entityData,
-                    false
+                    true
             );
             entityUUIDs.add(slime.getUUID().toString());
             entityIDs[index++] = slime.getId();
@@ -517,12 +517,12 @@ public class Heart extends SparrowHeart {
                 0, Vec3.ZERO, 0
         );
         SynchedEntityData entityData = new SynchedEntityData(item);
-        entityData.set(new EntityDataAccessor<>(8, EntityDataSerializers.ITEM_STACK), CraftItemStack.asNMSCopy(itemStack));
-        entityData.set(new EntityDataAccessor<>(5, EntityDataSerializers.BOOLEAN), true);
+        entityData.define(new EntityDataAccessor<>(8, EntityDataSerializers.ITEM_STACK), CraftItemStack.asNMSCopy(itemStack));
+        entityData.define(new EntityDataAccessor<>(5, EntityDataSerializers.BOOLEAN), true);
         ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
                 entityID,
                 entityData,
-                false
+                true
         );
         serverPlayer.connection.send(entityPacket);
         serverPlayer.connection.send(dataPacket);
