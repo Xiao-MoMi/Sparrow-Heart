@@ -50,10 +50,13 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team;
 import net.momirealms.sparrow.heart.SparrowHeart;
+import net.momirealms.sparrow.heart.exception.UnsupportedVersionException;
 import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarColor;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarOverlay;
 import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.display.FakeItemDisplay;
+import net.momirealms.sparrow.heart.feature.display.FakeTextDisplay;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
@@ -84,6 +87,7 @@ import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
@@ -432,6 +436,16 @@ public class Heart extends SparrowHeart {
     @Override
     public FakeArmorStand createFakeArmorStand(Location location) {
         return new SparrowArmorStand(location);
+    }
+
+    @Override
+    public FakeItemDisplay createFakeItemDisplay(Location location) {
+        throw new UnsupportedVersionException();
+    }
+
+    @Override
+    public FakeTextDisplay createFakeTextDisplay(Location location) {
+        throw new UnsupportedVersionException();
     }
 
     @Override

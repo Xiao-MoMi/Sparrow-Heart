@@ -5,6 +5,8 @@ import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarColor;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarOverlay;
 import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.display.FakeItemDisplay;
+import net.momirealms.sparrow.heart.feature.display.FakeTextDisplay;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
@@ -112,8 +114,6 @@ public abstract class SparrowHeart {
 
     public abstract void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs);
 
-    public abstract FakeArmorStand createFakeArmorStand(Location location);
-
     public abstract void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen);
 
     public abstract void removeBossBar(Player player, UUID uuid);
@@ -131,4 +131,10 @@ public abstract class SparrowHeart {
     public abstract Map<String, Integer> itemEnchantmentsToMap(Object item);
 
     public abstract int dropFakeItem(Player player, ItemStack itemStack, Location location);
+
+    public abstract FakeArmorStand createFakeArmorStand(Location location);
+
+    public abstract FakeItemDisplay createFakeItemDisplay(Location location);
+
+    public abstract FakeTextDisplay createFakeTextDisplay(Location location);
 }

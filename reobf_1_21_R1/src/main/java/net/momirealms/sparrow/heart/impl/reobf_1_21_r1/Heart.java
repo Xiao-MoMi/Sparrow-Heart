@@ -37,12 +37,14 @@ import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.EnderpearlItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.EnchantingTableBlock;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
@@ -59,6 +61,8 @@ import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarColor;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarOverlay;
 import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
+import net.momirealms.sparrow.heart.feature.display.FakeItemDisplay;
+import net.momirealms.sparrow.heart.feature.display.FakeTextDisplay;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
@@ -72,6 +76,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.block.EnchantingTable;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.entity.CraftFishHook;
@@ -436,6 +441,16 @@ public class Heart extends SparrowHeart {
     @Override
     public FakeArmorStand createFakeArmorStand(Location location) {
         return new SparrowArmorStand(location);
+    }
+
+    @Override
+    public FakeItemDisplay createFakeItemDisplay(Location location) {
+        return new SparrowItemDisplay(location);
+    }
+
+    @Override
+    public FakeTextDisplay createFakeTextDisplay(Location location) {
+        return new SparrowTextDisplay(location);
     }
 
     @Override

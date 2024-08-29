@@ -1,10 +1,13 @@
 package net.momirealms.sparrow.heart.impl.reobf_1_20_r4;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.util.datafix.fixes.BlockStateData;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.CraftLocation;
