@@ -61,6 +61,12 @@ public class SparrowArmorStand implements FakeArmorStand {
     }
 
     @Override
+    public void updateMetaData(Player player) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        serverPlayer.connection.send(getMetaPacket());
+    }
+
+    @Override
     public void destroy(Player player) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ClientboundRemoveEntitiesPacket packet = new ClientboundRemoveEntitiesPacket(entityID);
@@ -76,6 +82,15 @@ public class SparrowArmorStand implements FakeArmorStand {
                 EntityType.ARMOR_STAND, 0,
                 Vec3.ZERO, 0
         );
+        serverPlayer.connection.send(entityPacket);
+        serverPlayer.connection.send(getMetaPacket());
+        if (!equipments.isEmpty()) {
+            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
+            serverPlayer.connection.send(equipmentPacket);
+        }
+    }
+
+    private ClientboundSetEntityDataPacket getMetaPacket() {
         ArrayList<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
         if (invisible) {
             values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20)));
@@ -87,13 +102,7 @@ public class SparrowArmorStand implements FakeArmorStand {
         if (small) {
             values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(15, EntityDataSerializers.BYTE), (byte) 0x01));
         }
-        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, values);
-        serverPlayer.connection.send(entityPacket);
-        serverPlayer.connection.send(dataPacket);
-        if (!equipments.isEmpty()) {
-            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
-            serverPlayer.connection.send(equipmentPacket);
-        }
+        return new ClientboundSetEntityDataPacket(entityID, values);
     }
 
     @Override

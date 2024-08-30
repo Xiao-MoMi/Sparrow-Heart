@@ -47,12 +47,22 @@ public class SparrowItemDisplay implements FakeItemDisplay {
                 EntityType.ITEM_DISPLAY, 0,
                 Vec3.ZERO, 0
         );
-        ArrayList<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
-        values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(23, EntityDataSerializers.ITEM_STACK), CraftItemStack.asNMSCopy(item)));
-        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, values);
-        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, dataPacket));
+
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, getMetaPacket()));
         ClientboundBundlePacket packet = new ClientboundBundlePacket(packets);
         serverPlayer.connection.send(packet);
+    }
+
+    @Override
+    public void updateMetaData(Player player) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        serverPlayer.connection.send(getMetaPacket());
+    }
+
+    private ClientboundSetEntityDataPacket getMetaPacket() {
+        ArrayList<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
+        values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(23, EntityDataSerializers.ITEM_STACK), CraftItemStack.asNMSCopy(item)));
+        return new ClientboundSetEntityDataPacket(entityID, values);
     }
 
     @Override

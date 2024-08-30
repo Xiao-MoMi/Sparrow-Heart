@@ -1,6 +1,5 @@
 package net.momirealms.sparrow.heart.impl.reobf_1_19_r1;
 
-
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveEntitiesPacket;
@@ -38,6 +37,7 @@ public class SparrowArmorStand implements FakeArmorStand {
     private final List<Pair<EquipmentSlot, ItemStack>> equipments = new ArrayList<>();
     private final int entityID = SelfIncreaseEntityID.getAndIncrease();
     private final UUID uuid = UUID.randomUUID();
+    private ArmorStand armorStand;
 
     public SparrowArmorStand(Location location) {
         this.location = location;
@@ -64,6 +64,12 @@ public class SparrowArmorStand implements FakeArmorStand {
     }
 
     @Override
+    public void updateMetaData(Player player) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        serverPlayer.connection.send(getMetaPacket(serverPlayer));
+    }
+
+    @Override
     public void destroy(Player player) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ClientboundRemoveEntitiesPacket packet = new ClientboundRemoveEntitiesPacket(entityID);
@@ -73,15 +79,24 @@ public class SparrowArmorStand implements FakeArmorStand {
     @Override
     public void spawn(Player player) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-        ArmorStand armorStand = new ArmorStand(EntityType.ARMOR_STAND, serverPlayer.getLevel());
         ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
                 entityID, uuid,
                 location.getX(), location.getY(), location.getZ(), location.getPitch(), location.getYaw(),
                 EntityType.ARMOR_STAND, 0,
                 Vec3.ZERO, 0
         );
+        serverPlayer.connection.send(entityPacket);
+        serverPlayer.connection.send(getMetaPacket(serverPlayer));
+        if (!equipments.isEmpty()) {
+            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
+            serverPlayer.connection.send(equipmentPacket);
+        }
+    }
+
+    private ClientboundSetEntityDataPacket getMetaPacket(ServerPlayer player) {
+        if (armorStand == null)
+            armorStand = new ArmorStand(EntityType.ARMOR_STAND, player.level);
         SynchedEntityData entityData = new SynchedEntityData(armorStand);
-        armorStand.setInvisible(true);
         if (invisible) {
             entityData.define(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20));
         }
@@ -92,13 +107,7 @@ public class SparrowArmorStand implements FakeArmorStand {
         if (small) {
             entityData.define(new EntityDataAccessor<>(15, EntityDataSerializers.BYTE), (byte) 0x01);
         }
-        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, entityData, true);
-        serverPlayer.connection.send(entityPacket);
-        serverPlayer.connection.send(dataPacket);
-        if (!equipments.isEmpty()) {
-            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
-            serverPlayer.connection.send(equipmentPacket);
-        }
+        return new ClientboundSetEntityDataPacket(entityID, entityData, true);
     }
 
     @Override

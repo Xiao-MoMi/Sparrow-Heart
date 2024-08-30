@@ -58,16 +58,25 @@ public class SparrowTextDisplay implements FakeTextDisplay {
                 EntityType.TEXT_DISPLAY, 0,
                 Vec3.ZERO, 0
         );
+        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, getMetaPacket()));
+        ClientboundBundlePacket packet = new ClientboundBundlePacket(packets);
+        serverPlayer.connection.send(packet);
+    }
+
+    @Override
+    public void updateMetaData(Player player) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        serverPlayer.connection.send(getMetaPacket());
+    }
+
+    private ClientboundSetEntityDataPacket getMetaPacket() {
         ArrayList<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
         values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(14, EntityDataSerializers.BYTE), (byte) 3));
         values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(22, EntityDataSerializers.COMPONENT), CraftChatMessage.fromJSON(name)));
         values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(24, EntityDataSerializers.INT), rgba));
         values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(25, EntityDataSerializers.BYTE), (byte) -1));
         values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(26, EntityDataSerializers.BYTE), (byte) 0));
-        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, values);
-        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, dataPacket));
-        ClientboundBundlePacket packet = new ClientboundBundlePacket(packets);
-        serverPlayer.connection.send(packet);
+        return new ClientboundSetEntityDataPacket(entityID, values);
     }
 
     @Override

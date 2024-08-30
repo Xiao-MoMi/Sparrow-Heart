@@ -8,5 +8,7 @@ public interface FakeEntity {
 
     void spawn(Player player);
 
+    void updateMetaData(Player player);
+
     int entityID();
 }

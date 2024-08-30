@@ -75,6 +75,22 @@ public class SparrowArmorStand implements FakeArmorStand {
                 EntityType.ARMOR_STAND, 0,
                 Vec3.ZERO, 0
         );
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, getMetaPacket()));
+        if (!equipments.isEmpty()) {
+            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
+            packets.add(equipmentPacket);
+        }
+        ClientboundBundlePacket packet = new ClientboundBundlePacket(packets);
+        serverPlayer.connection.send(packet);
+    }
+
+    @Override
+    public void updateMetaData(Player player) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        serverPlayer.connection.send(getMetaPacket());
+    }
+
+    private ClientboundSetEntityDataPacket getMetaPacket() {
         ArrayList<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
         if (invisible) {
             values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20)));
@@ -86,14 +102,7 @@ public class SparrowArmorStand implements FakeArmorStand {
         if (small) {
             values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(15, EntityDataSerializers.BYTE), (byte) 0x01));
         }
-        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, values);
-        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, dataPacket));
-        if (!equipments.isEmpty()) {
-            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
-            packets.add(equipmentPacket);
-        }
-        ClientboundBundlePacket packet = new ClientboundBundlePacket(packets);
-        serverPlayer.connection.send(packet);
+        return new ClientboundSetEntityDataPacket(entityID, values);
     }
 
     @Override

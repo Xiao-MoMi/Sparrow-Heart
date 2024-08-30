@@ -9,6 +9,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.momirealms.sparrow.heart.feature.entity.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
@@ -30,7 +31,7 @@ public class SparrowArmorStand implements FakeArmorStand {
     private boolean small = false;
     private boolean invisible = false;
     private String name;
-    private final List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> equipments = new ArrayList<>();
+    private final List<Pair<EquipmentSlot, ItemStack>> equipments = new ArrayList<>();
     private final int entityID = SelfIncreaseEntityID.getAndIncrease();
     private final UUID uuid = UUID.randomUUID();
 
@@ -74,6 +75,22 @@ public class SparrowArmorStand implements FakeArmorStand {
                 EntityType.ARMOR_STAND, 0,
                 Vec3.ZERO, 0
         );
+        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, getMetaPacket()));
+        if (!equipments.isEmpty()) {
+            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
+            packets.add(equipmentPacket);
+        }
+        ClientboundBundlePacket packet = new ClientboundBundlePacket(packets);
+        serverPlayer.connection.send(packet);
+    }
+
+    @Override
+    public void updateMetaData(Player player) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        serverPlayer.connection.send(getMetaPacket());
+    }
+
+    private ClientboundSetEntityDataPacket getMetaPacket() {
         ArrayList<SynchedEntityData.DataValue<?>> values = new ArrayList<>();
         if (invisible) {
             values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(0, EntityDataSerializers.BYTE), (byte) (0x20)));
@@ -85,14 +102,7 @@ public class SparrowArmorStand implements FakeArmorStand {
         if (small) {
             values.add(SynchedEntityData.DataValue.create(new EntityDataAccessor<>(15, EntityDataSerializers.BYTE), (byte) 0x01));
         }
-        ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(entityID, values);
-        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>(List.of(entityPacket, dataPacket));
-        if (!equipments.isEmpty()) {
-            ClientboundSetEquipmentPacket equipmentPacket = new ClientboundSetEquipmentPacket(entityID, equipments);
-            packets.add(equipmentPacket);
-        }
-        ClientboundBundlePacket packet = new ClientboundBundlePacket(packets);
-        serverPlayer.connection.send(packet);
+        return new ClientboundSetEntityDataPacket(entityID, values);
     }
 
     @Override
