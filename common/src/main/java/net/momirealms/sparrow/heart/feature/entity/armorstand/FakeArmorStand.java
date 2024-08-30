@@ -1,10 +1,11 @@
-package net.momirealms.sparrow.heart.feature.armorstand;
+package net.momirealms.sparrow.heart.feature.entity.armorstand;
 
+import net.momirealms.sparrow.heart.feature.entity.FakeEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
-public interface FakeArmorStand {
+public interface FakeArmorStand extends FakeEntity {
 
     void small(boolean small);
 
@@ -13,10 +14,4 @@ public interface FakeArmorStand {
     void name(String json);
 
     void equipment(EquipmentSlot slot, ItemStack itemStack);
-
-    void destroy(Player player);
-
-    void spawn(Player player);
-
-    int entityID();
 }

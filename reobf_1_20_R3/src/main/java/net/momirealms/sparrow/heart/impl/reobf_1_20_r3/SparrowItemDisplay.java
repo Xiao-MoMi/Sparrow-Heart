@@ -8,7 +8,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.Vec3;
-import net.momirealms.sparrow.heart.feature.display.FakeItemDisplay;
+import net.momirealms.sparrow.heart.feature.entity.display.FakeItemDisplay;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_20_R3.entity.CraftPlayer;

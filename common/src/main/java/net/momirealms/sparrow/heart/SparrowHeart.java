@@ -1,12 +1,12 @@
 package net.momirealms.sparrow.heart;
 
 import net.momirealms.sparrow.heart.exception.UnsupportedVersionException;
-import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
+import net.momirealms.sparrow.heart.feature.entity.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarColor;
 import net.momirealms.sparrow.heart.feature.bossbar.BossBarOverlay;
 import net.momirealms.sparrow.heart.feature.color.NamedTextColor;
-import net.momirealms.sparrow.heart.feature.display.FakeItemDisplay;
-import net.momirealms.sparrow.heart.feature.display.FakeTextDisplay;
+import net.momirealms.sparrow.heart.feature.entity.display.FakeItemDisplay;
+import net.momirealms.sparrow.heart.feature.entity.display.FakeTextDisplay;
 import net.momirealms.sparrow.heart.feature.fluid.FluidData;
 import net.momirealms.sparrow.heart.feature.highlight.HighlightBlocks;
 import net.momirealms.sparrow.heart.feature.inventory.HandSlot;

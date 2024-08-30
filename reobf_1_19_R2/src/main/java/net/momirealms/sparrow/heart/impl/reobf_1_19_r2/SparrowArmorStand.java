@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.phys.Vec3;
-import net.momirealms.sparrow.heart.feature.armorstand.FakeArmorStand;
+import net.momirealms.sparrow.heart.feature.entity.armorstand.FakeArmorStand;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.v1_19_R2.CraftEquipmentSlot;
