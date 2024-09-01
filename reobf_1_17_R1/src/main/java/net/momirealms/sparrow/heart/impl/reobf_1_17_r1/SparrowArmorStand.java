@@ -93,6 +93,21 @@ public class SparrowArmorStand implements FakeArmorStand {
         }
     }
 
+    @Override
+    public void updateEquipment(Player player) {
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        Optional.ofNullable(getEquipmentPacket()).ifPresent(packet -> {
+            serverPlayer.connection.send(packet);
+        });
+    }
+
+    private ClientboundSetEquipmentPacket getEquipmentPacket() {
+        if (!equipments.isEmpty()) {
+            return new ClientboundSetEquipmentPacket(entityID, equipments);
+        }
+        return null;
+    }
+
     private ClientboundSetEntityDataPacket getMetaPacket(ServerPlayer player) {
         if (armorStand == null)
             armorStand = new ArmorStand(EntityType.ARMOR_STAND, player.level);
