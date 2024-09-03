@@ -129,6 +129,7 @@ public class Heart extends SparrowHeart {
         }
         try {
             timeUntilLuredField = FishingHook.class.getDeclaredField("as");
+            timeUntilLuredField.setAccessible(true);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get time until lured", e);
         }
