@@ -103,6 +103,7 @@ public class Heart extends SparrowHeart {
     private final Enum<?> updateBossBarProgressOperation;
     private final EntityDataAccessor<Boolean> dataBiting;
     private final Method sendPacketImmediateMethod;
+    private final Field timeUntilLuredField;
 
     public Heart() {
         try {
@@ -125,6 +126,11 @@ public class Heart extends SparrowHeart {
             dataBiting = (EntityDataAccessor<Boolean>) dataBitingField.get(null);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get hook biting state", e);
+        }
+        try {
+            timeUntilLuredField = FishingHook.class.getDeclaredField("ar");
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("Failed to get time until lured", e);
         }
         try {
             sendPacketImmediateMethod = Connection.class.getDeclaredMethod("writePacket", Packet.class, GenericFutureListener.class, Boolean.class);
@@ -561,4 +567,23 @@ public class Heart extends SparrowHeart {
         return SparrowFluidData.createData(state);
     }
 
+    @Override
+    public int getWaitTime(FishHook hook) {
+        FishingHook fishingHook = ((CraftFishHook) hook).getHandle();
+        try {
+            return (int) timeUntilLuredField.get(fishingHook);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void setWaitTime(FishHook hook, int ticks) {
+        FishingHook fishingHook = ((CraftFishHook) hook).getHandle();
+        try {
+            timeUntilLuredField.set(fishingHook, ticks);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

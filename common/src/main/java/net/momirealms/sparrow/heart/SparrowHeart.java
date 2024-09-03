@@ -124,6 +124,14 @@ public abstract class SparrowHeart {
 
     public abstract boolean isFishingHookBit(FishHook hook);
 
+    public int getWaitTime(FishHook hook) {
+        return hook.getWaitTime();
+    }
+
+    public void setWaitTime(FishHook hook, int ticks) {
+        hook.setWaitTime(ticks);
+    }
+
     public abstract void useItem(Player player, HandSlot handSlot, @Nullable ItemStack itemStack);
 
     public abstract List<ItemStack> getFishingLoot(Player player, FishHook hook, ItemStack rod);
