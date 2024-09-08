@@ -556,4 +556,9 @@ public class Heart extends SparrowHeart {
         return SparrowFluidData.createData(state);
     }
 
+    @Override
+    public boolean isRainingAt(Location location) {
+        CraftWorld craftWorld = (CraftWorld) location.getWorld();
+        return craftWorld.getHandle().isRainingAt(new BlockPos(location.getX(), location.getY(), location.getZ()));
+    }
 }

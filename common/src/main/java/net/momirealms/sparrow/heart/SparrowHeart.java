@@ -36,6 +36,8 @@ public abstract class SparrowHeart {
 
     public abstract FluidData getFluidData(Location location);
 
+    public abstract boolean isRainingAt(Location location);
+
     private static class SingletonHolder {
         private static final SparrowHeart INSTANCE = getHeart();
 
