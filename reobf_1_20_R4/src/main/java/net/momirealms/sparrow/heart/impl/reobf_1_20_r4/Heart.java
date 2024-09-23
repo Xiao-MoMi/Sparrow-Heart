@@ -131,8 +131,6 @@ public class Heart extends SparrowHeart {
             throw new RuntimeException("Failed to get hook biting state", e);
         }
         try {
-            sendPacketImmediateMethod = ReflectionUtils.getMethod()
-
             sendPacketImmediateMethod = Connection.class.getDeclaredMethod("sendPacket", Packet.class, PacketSendListener.class, boolean.class);
             sendPacketImmediateMethod.setAccessible(true);
         } catch (ReflectiveOperationException e) {
