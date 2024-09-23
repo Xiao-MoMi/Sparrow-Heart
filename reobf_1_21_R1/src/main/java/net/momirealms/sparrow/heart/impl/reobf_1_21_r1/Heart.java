@@ -451,11 +451,11 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
-    public void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
+    public void createBossBar(Player player, UUID uuid, Object displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
         buf.writeUUID(uuid);
         buf.writeEnum(addBossBarOperation);
-        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, CraftChatMessage.fromJSON(displayName));
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, (Component) displayName);
         buf.writeFloat(progress);
         buf.writeEnum(BossEvent.BossBarColor.valueOf(color.name()));
         buf.writeEnum(BossEvent.BossBarOverlay.valueOf(overlay.name()));
@@ -465,16 +465,21 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
+    public Object getMinecraftComponent(String json) {
+        return CraftChatMessage.fromJSON(json);
+    }
+
+    @Override
     public void removeBossBar(Player player, UUID uuid) {
         ((CraftPlayer) player).getHandle().connection.send(ClientboundBossEventPacket.createRemovePacket(uuid));
     }
 
     @Override
-    public void updateBossBarName(Player player, UUID uuid, String displayName) {
+    public void updateBossBarName(Player player, UUID uuid, Object component) {
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
         buf.writeUUID(uuid);
         buf.writeEnum(updateBossBarNameOperation);
-        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, CraftChatMessage.fromJSON(displayName));
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, (Component) component);
         ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
         ((CraftPlayer) player).getHandle().connection.send(packet);
     }

@@ -69,6 +69,7 @@ import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
 import net.momirealms.sparrow.heart.feature.team.TeamColor;
 import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import net.momirealms.sparrow.heart.util.BossBarUtils;
+import net.momirealms.sparrow.heart.util.ReflectionUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
@@ -130,6 +131,8 @@ public class Heart extends SparrowHeart {
             throw new RuntimeException("Failed to get hook biting state", e);
         }
         try {
+            sendPacketImmediateMethod = ReflectionUtils.getMethod()
+
             sendPacketImmediateMethod = Connection.class.getDeclaredMethod("sendPacket", Packet.class, PacketSendListener.class, boolean.class);
             sendPacketImmediateMethod.setAccessible(true);
         } catch (ReflectiveOperationException e) {
@@ -457,11 +460,11 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
-    public void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
+    public void createBossBar(Player player, UUID uuid, Object component, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
         buf.writeUUID(uuid);
         buf.writeEnum(addBossBarOperation);
-        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, CraftChatMessage.fromJSON(displayName));
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, (Component) component);
         buf.writeFloat(progress);
         buf.writeEnum(BossEvent.BossBarColor.valueOf(color.name()));
         buf.writeEnum(BossEvent.BossBarOverlay.valueOf(overlay.name()));
@@ -471,16 +474,21 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
+    public Object getMinecraftComponent(String json) {
+        return CraftChatMessage.fromJSON(json);
+    }
+
+    @Override
     public void removeBossBar(Player player, UUID uuid) {
         ((CraftPlayer) player).getHandle().connection.send(ClientboundBossEventPacket.createRemovePacket(uuid));
     }
 
     @Override
-    public void updateBossBarName(Player player, UUID uuid, String displayName) {
+    public void updateBossBarName(Player player, UUID uuid, Object component) {
         RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
         buf.writeUUID(uuid);
         buf.writeEnum(updateBossBarNameOperation);
-        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, CraftChatMessage.fromJSON(displayName));
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, (Component) component);
         ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
         ((CraftPlayer) player).getHandle().connection.send(packet);
     }

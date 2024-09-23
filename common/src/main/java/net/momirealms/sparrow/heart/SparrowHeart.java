@@ -116,11 +116,21 @@ public abstract class SparrowHeart {
 
     public abstract void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs);
 
-    public abstract void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen);
+    public void createBossBar(Player player, UUID uuid, String displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
+        createBossBar(player, uuid, getMinecraftComponent(displayName), color, overlay, progress, createWorldFog, playBossMusic, darkenScreen);
+    }
+
+    public abstract void createBossBar(Player player, UUID uuid, Object component, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen);
+
+    public abstract Object getMinecraftComponent(String json);
 
     public abstract void removeBossBar(Player player, UUID uuid);
 
-    public abstract void updateBossBarName(Player player, UUID uuid, String displayName);
+    public void updateBossBarName(Player player, UUID uuid, String displayName) {
+        updateBossBarName(player, uuid, getMinecraftComponent(displayName));
+    }
+
+    public abstract void updateBossBarName(Player player, UUID uuid, Object component);
 
     public abstract void updateBossBarProgress(Player player, UUID uuid, float progress);
 
