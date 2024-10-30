@@ -1,19 +1,22 @@
-package net.momirealms.sparrow.heart.impl.reobf_1_20_r1;
+package net.momirealms.sparrow.heart.impl.reobf_1_21_r1;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.PacketSendListener;
+import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
+import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
 import net.minecraft.network.protocol.game.*;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -24,6 +27,7 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
+import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.InteractionHand;
@@ -32,14 +36,15 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
+import net.minecraft.world.inventory.EnchantmentMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.PalettedContainer;
-import net.minecraft.world.level.chunk.PalettedContainerRO;
+import net.minecraft.world.level.block.EnchantingTableBlock;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
@@ -71,17 +76,16 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftFishHook;
-import org.bukkit.craftbukkit.v1_20_R1.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_20_R1.event.CraftEventFactory;
-import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftContainer;
-import org.bukkit.craftbukkit.v1_20_R1.inventory.CraftItemStack;
-import org.bukkit.craftbukkit.v1_20_R1.util.CraftChatMessage;
-import org.bukkit.craftbukkit.v1_20_R1.util.CraftLocation;
-import org.bukkit.craftbukkit.v1_20_R1.util.CraftNamespacedKey;
-import org.bukkit.craftbukkit.v1_20_R1.util.CraftVector;
-import org.bukkit.enchantments.Enchantment;
+import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.entity.CraftFishHook;
+import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.event.CraftEventFactory;
+import org.bukkit.craftbukkit.inventory.CraftContainer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
+import org.bukkit.craftbukkit.util.CraftLocation;
+import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
@@ -96,7 +100,7 @@ import java.util.*;
 
 public class Heart extends SparrowHeart {
 
-    private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().registryOrThrow(Registries.BIOME);
+    private final Registry<Biome> biomeRegistry = MinecraftServer.getServer().registries().compositeAccess().lookupOrThrow(Registries.BIOME);
     private final Enum<?> addBossBarOperation;
     private final Enum<?> updateBossBarNameOperation;
     private final Enum<?> updateBossBarProgressOperation;
@@ -105,28 +109,28 @@ public class Heart extends SparrowHeart {
 
     public Heart() {
         try {
-            Class<?> cls = Class.forName("net.minecraft.network.protocol.game.PacketPlayOutBoss$d");
-            Field fieldAdd = cls.getDeclaredField("a");
+            Class<?> cls = Class.forName("net.minecraft.network.protocol.game.ClientboundBossEventPacket$OperationType");
+            Field fieldAdd = cls.getDeclaredField("ADD");
             fieldAdd.setAccessible(true);
             addBossBarOperation = (Enum<?>) fieldAdd.get(null);
-            Field fieldUpdateProgress = cls.getDeclaredField("c");
+            Field fieldUpdateProgress = cls.getDeclaredField("UPDATE_PROGRESS");
             fieldUpdateProgress.setAccessible(true);
             updateBossBarProgressOperation = (Enum<?>) fieldUpdateProgress.get(null);
-            Field fieldUpdateName = cls.getDeclaredField("d");
+            Field fieldUpdateName = cls.getDeclaredField("UPDATE_NAME");
             fieldUpdateName.setAccessible(true);
             updateBossBarNameOperation = (Enum<?>) fieldUpdateName.get(null);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get add boss bar operation", e);
         }
         try {
-            Field dataBitingField = FishingHook.class.getDeclaredField("h");
+            Field dataBitingField = FishingHook.class.getDeclaredField("DATA_BITING");
             dataBitingField.setAccessible(true);
             dataBiting = (EntityDataAccessor<Boolean>) dataBitingField.get(null);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get hook biting state", e);
         }
         try {
-            sendPacketImmediateMethod = Connection.class.getDeclaredMethod("sendPacket", Packet.class, PacketSendListener.class, Boolean.class);
+            sendPacketImmediateMethod = Connection.class.getDeclaredMethod("sendPacket", Packet.class, PacketSendListener.class, boolean.class);
             sendPacketImmediateMethod.setAccessible(true);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get send packet method", e);
@@ -149,7 +153,7 @@ public class Heart extends SparrowHeart {
     public void sendActionBar(Player player, String json) {
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer serverPlayer = craftPlayer.getHandle();
-        ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(json)));
+        ClientboundSetActionBarTextPacket packet = new ClientboundSetActionBarTextPacket(Objects.requireNonNull(CraftChatMessage.fromJSON(json)));
         serverPlayer.connection.send(packet);
     }
 
@@ -157,15 +161,15 @@ public class Heart extends SparrowHeart {
     public void sendTitle(Player player, @Nullable String titleJson, @Nullable String subTitleJson, int fadeInTicks, int stayTicks, int fadeOutTicks) {
         CraftPlayer craftPlayer = (CraftPlayer) player;
         ServerPlayer serverPlayer = craftPlayer.getHandle();
-        ArrayList<Packet<ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(new ClientboundSetTitlesAnimationPacket(fadeInTicks, stayTicks, fadeOutTicks));
         if (titleJson != null) {
-            packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(titleJson))));
+            packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(CraftChatMessage.fromJSON(titleJson))));
         } else {
             packetListeners.add(new ClientboundSetTitleTextPacket(Objects.requireNonNull(Component.empty())));
         }
         if (subTitleJson != null) {
-            packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(Component.Serializer.fromJson(subTitleJson))));
+            packetListeners.add(new ClientboundSetSubtitleTextPacket(Objects.requireNonNull(CraftChatMessage.fromJSON(subTitleJson))));
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
         sendPacketImmediately(serverPlayer, bundlePacket);
@@ -175,21 +179,21 @@ public class Heart extends SparrowHeart {
     public void sendToast(Player player, ItemStack icon, String titleJson, String advancementType) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(icon);
-        DisplayInfo displayInfo = new DisplayInfo(nmsStack, Objects.requireNonNull(Component.Serializer.fromJson(titleJson)), Component.literal(""), null, FrameType.valueOf(advancementType), true, false, true);
+        Optional<DisplayInfo> displayInfo = Optional.of(new DisplayInfo(nmsStack, Objects.requireNonNull(CraftChatMessage.fromJSON(titleJson)), Component.literal(""), Optional.empty(), AdvancementType.valueOf(advancementType), true, false, true));
         AdvancementRewards advancementRewards = AdvancementRewards.EMPTY;
-        ResourceLocation id = new ResourceLocation("sparrow", "toast");
-        Criterion criterion = new Criterion(new ImpossibleTrigger.TriggerInstance());
-        HashMap<String, Criterion> criteria = new HashMap<>(Map.of("impossible", criterion));
-        String[][] requirements = {{"impossible"}};
-        Advancement advancement = new Advancement(id, null, displayInfo, advancementRewards, criteria, requirements, false);
+        Optional<ResourceLocation> id = Optional.of(ResourceLocation.fromNamespaceAndPath("sparrow", "toast"));
+        Criterion<ImpossibleTrigger.TriggerInstance> impossibleTrigger = new Criterion<>(new ImpossibleTrigger(), new ImpossibleTrigger.TriggerInstance());
+        HashMap<String, Criterion<?>> criteria = new HashMap<>(Map.of("impossible", impossibleTrigger));
+        AdvancementRequirements advancementRequirements = new AdvancementRequirements(new ArrayList<>(List.of(new ArrayList<>(List.of("impossible")))));
+        Advancement advancement = new Advancement(Optional.empty(), displayInfo, advancementRewards, criteria, advancementRequirements, false);
         Map<ResourceLocation, AdvancementProgress> advancementsToGrant = new HashMap<>();
         AdvancementProgress advancementProgress = new AdvancementProgress();
-        advancementProgress.update(criteria, requirements);
+        advancementProgress.update(advancementRequirements);
         Objects.requireNonNull(advancementProgress.getCriterion("impossible")).grant();
-        advancementsToGrant.put(id, advancementProgress);
-        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(advancement)), new HashSet<>(), advancementsToGrant);
-        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id)), new HashMap<>());
-        ArrayList<Packet<ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        advancementsToGrant.put(id.get(), advancementProgress);
+        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(new AdvancementHolder(id.get(), advancement))), new HashSet<>(), advancementsToGrant);
+        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id.get())), new HashMap<>());
+        ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(packet1);
         packetListeners.add(packet2);
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packetListeners);
@@ -214,7 +218,7 @@ public class Heart extends SparrowHeart {
         ClientboundSetEquipmentPacket packet1 = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(totem))));
         ClientboundEntityEventPacket packet2 = new ClientboundEntityEventPacket(((CraftPlayer) player).getHandle(), (byte) 35);
         ClientboundSetEquipmentPacket packet3 = new ClientboundSetEquipmentPacket(player.getEntityId(), List.of(Pair.of(EquipmentSlot.OFFHAND, CraftItemStack.asNMSCopy(previousItem))));
-        ArrayList<Packet<ClientGamePacketListener>> packetListeners = new ArrayList<>();
+        ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(packet1);
         packetListeners.add(packet2);
         packetListeners.add(packet3);
@@ -250,11 +254,9 @@ public class Heart extends SparrowHeart {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ClientboundAnimatePacket packet = new ClientboundAnimatePacket(serverPlayer, slot.getId());
         serverPlayer.connection.send(packet);
-        ChunkMap.TrackedEntity tracker = serverPlayer.tracker;
-        if (tracker != null) {
-            for (ServerPlayerConnection connection : tracker.seenBy) {
-                connection.send(packet);
-            }
+        ChunkMap.TrackedEntity tracker = serverPlayer.moonrise$getTrackedEntity();
+        for (ServerPlayerConnection connection : tracker.seenBy) {
+            connection.send(packet);
         }
     }
 
@@ -264,7 +266,8 @@ public class Heart extends SparrowHeart {
         RandomSource random = RandomSource.create();
         DataSlot enchantmentSeed = DataSlot.standalone();
         random.setSeed(enchantmentSeed.get());
-        enchantmentSeed.set(player.getEnchantmentSeed());
+        ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
+        enchantmentSeed.set(serverPlayer.enchantmentSeed);
         net.minecraft.world.item.ItemStack itemStack = CraftItemStack.asNMSCopy(itemToEnchant);
         int[] costs = new int[3];
         int[] enchantClue = new int[]{-1, -1, -1};
@@ -278,22 +281,30 @@ public class Heart extends SparrowHeart {
                 costs[j] = 0;
             }
         }
+        IdMap<Holder<Enchantment>> registry = MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
         for (j = 0; j < 3; ++j) {
             if (costs[j] > 0) {
                 random.setSeed(enchantmentSeed.get() + j);
-                List<EnchantmentInstance> list = EnchantmentHelper.selectEnchantment(random, itemStack, costs[j], false);
-                if (itemStack.is(Items.BOOK) && list.size() > 1) {
-                    list.remove(random.nextInt(list.size()));
+                Optional<HolderSet.Named<Enchantment>> optional = MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).get(EnchantmentTags.IN_ENCHANTING_TABLE);
+                List<EnchantmentInstance> list;
+                if (optional.isEmpty()) {
+                    list = List.of();
+                } else {
+                    list = EnchantmentHelper.selectEnchantment(random, itemStack, costs[j], ((HolderSet.Named) optional.get()).stream());
+                    if (itemStack.is(Items.BOOK) && list.size() > 1) {
+                        list.remove(random.nextInt(list.size()));
+                    }
                 }
+
                 if (list != null && !list.isEmpty()) {
                     EnchantmentInstance weightedRandomEnchant = list.get(random.nextInt(list.size()));
-                    enchantClue[j] = BuiltInRegistries.ENCHANTMENT.getId(weightedRandomEnchant.enchantment);
+                    enchantClue[j] = registry.getId(weightedRandomEnchant.enchantment);
                     levelClue[j] = weightedRandomEnchant.level;
                 }
             }
         }
         for (j = 0; j < 3; ++j) {
-            org.bukkit.enchantments.Enchantment enchantment = (enchantClue[j] >= 0) ? org.bukkit.enchantments.Enchantment.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.ENCHANTMENT.getKey(BuiltInRegistries.ENCHANTMENT.byId(enchantClue[j])))) : null;
+            org.bukkit.enchantments.Enchantment enchantment = (enchantClue[j] >= 0) ? CraftEnchantment.minecraftHolderToBukkit(registry.byId(enchantClue[j])) : null;
             offers[j] = (enchantment != null) ? new EnchantmentOffer(enchantment, levelClue[j], costs[j]) : null;
         }
         return offers;
@@ -302,7 +313,7 @@ public class Heart extends SparrowHeart {
     @Override
     public HighlightBlocks highlightBlocks(Player player, NamedTextColor color, Location... locations) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>();
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         ArrayList<String> entityUUIDs = new ArrayList<>();
         int[] entityIDs = new int[locations.length];
         int index = 0;
@@ -310,17 +321,9 @@ public class Heart extends SparrowHeart {
             UUID uuid = UUID.randomUUID();
             int entityID = SelfIncreaseEntityID.getAndIncrease();
             ClientboundAddEntityPacket entityPacket = new ClientboundAddEntityPacket(
-                    entityID,
-                    uuid,
-                    location.getX(),
-                    location.getY(),
-                    location.getZ(),
-                    0,
-                    0,
-                    EntityType.SLIME,
-                    0,
-                    Vec3.ZERO,
-                    0
+                    entityID, uuid,
+                    location.getX(), location.getY(), location.getZ(), 0, 0,
+                    EntityType.SLIME, 0, Vec3.ZERO, 0
             );
             ClientboundSetEntityDataPacket dataPacket = new ClientboundSetEntityDataPacket(
                     entityID,
@@ -398,7 +401,7 @@ public class Heart extends SparrowHeart {
     @Override
     public void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>();
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         float ROTATION_FACTOR = 256.0F / 360.0F;
         float yaw = location.getYaw() * ROTATION_FACTOR;
         float pitch = location.getPitch() * ROTATION_FACTOR;
@@ -411,7 +414,7 @@ public class Heart extends SparrowHeart {
             buf.writeByte((byte) yaw);
             buf.writeByte((byte) pitch);
             buf.writeBoolean(onGround);
-            ClientboundTeleportEntityPacket packet = new ClientboundTeleportEntityPacket(buf);
+            ClientboundTeleportEntityPacket packet = ClientboundTeleportEntityPacket.STREAM_CODEC.decode(buf);
             packets.add(packet);
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
@@ -420,12 +423,8 @@ public class Heart extends SparrowHeart {
 
     @Override
     public void sendDebugMarker(Player player, Location location, String message, int duration, int color) {
-        FriendlyByteBuf friendlyByteBuf = new FriendlyByteBuf(Unpooled.buffer());
-        friendlyByteBuf.writeBlockPos(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
-        friendlyByteBuf.writeInt(color);
-        friendlyByteBuf.writeUtf(message);
-        friendlyByteBuf.writeInt(duration);
-        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(ClientboundCustomPayloadPacket.DEBUG_GAME_TEST_ADD_MARKER, friendlyByteBuf));
+        GameTestAddMarkerDebugPayload payload = new GameTestAddMarkerDebugPayload(new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ()), color, message, duration);
+        ((CraftPlayer) player).getHandle().connection.send(new ClientboundCustomPayloadPacket(payload));
     }
 
     @Override
@@ -454,16 +453,16 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
-    public void createBossBar(Player player, UUID uuid, Object component, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
-        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+    public void createBossBar(Player player, UUID uuid, Object displayName, BossBarColor color, BossBarOverlay overlay, float progress, boolean createWorldFog, boolean playBossMusic, boolean darkenScreen) {
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
         buf.writeUUID(uuid);
         buf.writeEnum(addBossBarOperation);
-        buf.writeComponent((Component) component);
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, (Component) displayName);
         buf.writeFloat(progress);
         buf.writeEnum(BossEvent.BossBarColor.valueOf(color.name()));
         buf.writeEnum(BossEvent.BossBarOverlay.valueOf(overlay.name()));
         buf.writeByte(BossBarUtils.encodeProperties(darkenScreen, playBossMusic, createWorldFog));
-        ClientboundBossEventPacket packet = new ClientboundBossEventPacket(buf);
+        ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
         ((CraftPlayer) player).getHandle().connection.send(packet);
     }
 
@@ -479,21 +478,21 @@ public class Heart extends SparrowHeart {
 
     @Override
     public void updateBossBarName(Player player, UUID uuid, Object component) {
-        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
         buf.writeUUID(uuid);
         buf.writeEnum(updateBossBarNameOperation);
-        buf.writeComponent((Component) component);
-        ClientboundBossEventPacket packet = new ClientboundBossEventPacket(buf);
+        ComponentSerialization.TRUSTED_STREAM_CODEC.encode(buf, (Component) component);
+        ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
         ((CraftPlayer) player).getHandle().connection.send(packet);
     }
 
     @Override
     public void updateBossBarProgress(Player player, UUID uuid, float progress) {
-        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        RegistryFriendlyByteBuf buf = new RegistryFriendlyByteBuf(Unpooled.buffer(), MinecraftServer.getServer().registryAccess());
         buf.writeUUID(uuid);
         buf.writeEnum(updateBossBarProgressOperation);
         buf.writeFloat(progress);
-        ClientboundBossEventPacket packet = new ClientboundBossEventPacket(buf);
+        ClientboundBossEventPacket packet = ClientboundBossEventPacket.STREAM_CODEC.decode(buf);
         ((CraftPlayer) player).getHandle().connection.send(packet);
     }
 
@@ -511,9 +510,9 @@ public class Heart extends SparrowHeart {
                 .withParameter(LootContextParams.ORIGIN, CraftLocation.toVec3D(location))
                 .withParameter(LootContextParams.TOOL, CraftItemStack.asNMSCopy(rod))
                 .withParameter(LootContextParams.THIS_ENTITY, ((CraftFishHook) hook).getHandle())
-                .withLuck((float) (rod.getEnchantmentLevel(Enchantment.LUCK) + Optional.ofNullable(player.getAttribute(Attribute.GENERIC_LUCK)).map(AttributeInstance::getValue).orElse(0d)))
+                .withLuck((float) (rod.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.LUCK_OF_THE_SEA) + Optional.ofNullable(player.getAttribute(Attribute.GENERIC_LUCK)).map(AttributeInstance::getValue).orElse(0d)))
                 .create(LootContextParamSets.FISHING);
-        LootTable loottable = level.getServer().getLootData().getLootTable(BuiltInLootTables.FISHING);
+        LootTable loottable = level.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
         List<net.minecraft.world.item.ItemStack> list = loottable.getRandomItems(lootparams);
         return list.stream().filter(itemStack -> itemStack != null && !itemStack.isEmpty()).map(net.minecraft.world.item.ItemStack::getBukkitStack).toList();
     }
@@ -526,7 +525,14 @@ public class Heart extends SparrowHeart {
 
     @Override
     public Map<String, Integer> itemEnchantmentsToMap(Object item) {
-        return Map.of();
+        ItemEnchantments enchantments = (ItemEnchantments) item;
+        Map<String, Integer> map = new HashMap<>();
+        for (Object2IntMap.Entry<Holder<Enchantment>> entry : enchantments.entrySet()) {
+            Holder<Enchantment> enchantmentHolder = entry.getKey();
+            int level = entry.getIntValue();
+            map.put(enchantmentHolder.getRegisteredName(), level);
+        }
+        return map;
     }
 
     @Override
@@ -554,7 +560,7 @@ public class Heart extends SparrowHeart {
     @Override
     public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
-        ArrayList<Packet<ClientGamePacketListener>> packets = new ArrayList<>();
+        ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         Vec3 vec3 = CraftVector.toNMS(vector);
         for (int entityID : entityIDs) {
             ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
