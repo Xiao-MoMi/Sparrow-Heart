@@ -70,7 +70,9 @@ import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import net.momirealms.sparrow.heart.util.BossBarUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -508,7 +510,7 @@ public class Heart extends SparrowHeart {
                 .withParameter(LootContextParams.ORIGIN, CraftLocation.toVec3D(location))
                 .withParameter(LootContextParams.TOOL, CraftItemStack.asNMSCopy(rod))
                 .withParameter(LootContextParams.THIS_ENTITY, ((CraftFishHook) hook).getHandle())
-                .withLuck((float) (rod.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.LUCK_OF_THE_SEA) + Optional.ofNullable(player.getAttribute(Attribute.GENERIC_LUCK)).map(AttributeInstance::getValue).orElse(0d)))
+                .withLuck((float) (rod.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.LUCK_OF_THE_SEA) + Optional.ofNullable(player.getAttribute(Objects.requireNonNull(org.bukkit.Registry.ATTRIBUTE.get(NamespacedKey.minecraft("luck"))))).map(AttributeInstance::getValue).orElse(0d)))
                 .create(LootContextParamSets.FISHING);
         LootTable loottable = level.getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
         List<net.minecraft.world.item.ItemStack> list = loottable.getRandomItems(lootparams);
@@ -564,7 +566,6 @@ public class Heart extends SparrowHeart {
             ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
             packets.add(packet);
         }
-        RedstoneLampBlock
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
         serverPlayer.connection.send(bundlePacket);
     }
