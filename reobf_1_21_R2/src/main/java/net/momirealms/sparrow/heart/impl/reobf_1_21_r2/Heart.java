@@ -14,6 +14,7 @@ import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
+import net.minecraft.network.chat.contents.ScoreContents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
@@ -33,6 +34,8 @@ import net.minecraft.world.BossEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.PositionMoveRotation;
+import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
@@ -43,9 +46,13 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
+import net.minecraft.world.level.portal.TeleportTransition;
 import net.minecraft.world.level.storage.loot.BuiltInLootTables;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -89,6 +96,7 @@ import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
@@ -402,19 +410,19 @@ public class Heart extends SparrowHeart {
     public void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
-        float ROTATION_FACTOR = 256.0F / 360.0F;
-        float yaw = location.getYaw() * ROTATION_FACTOR;
-        float pitch = location.getPitch() * ROTATION_FACTOR;
         for (int entityID : entityIDs) {
-            FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-            buf.writeVarInt(entityID);
-            buf.writeDouble(location.getX());
-            buf.writeDouble(location.getY());
-            buf.writeDouble(location.getZ());
-            buf.writeByte((byte) yaw);
-            buf.writeByte((byte) pitch);
-            buf.writeBoolean(onGround);
-            ClientboundTeleportEntityPacket packet = ClientboundTeleportEntityPacket.STREAM_CODEC.decode(buf);
+            ClientboundTeleportEntityPacket packet = ClientboundTeleportEntityPacket.teleport(
+                    entityID,
+                    PositionMoveRotation.of(new TeleportTransition(
+                            serverPlayer.serverLevel(),
+                            new Vec3(location.getX(), location.getY(), location.getZ()),
+                            Vec3.ZERO,
+                            location.getYaw(), location.getPitch(),
+                            false, false, Set.of(), (entity -> {}), PlayerTeleportEvent.TeleportCause.PLUGIN
+                    )),
+                    Set.of(),
+                    false
+            );
             packets.add(packet);
         }
         ClientboundBundlePacket bundlePacket = new ClientboundBundlePacket(packets);
