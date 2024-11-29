@@ -113,7 +113,11 @@ public abstract class SparrowHeart {
 
     public abstract void removeClientSideEntity(Player player, int... entityIDs);
 
-    public abstract void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs);
+    public abstract void sendClientSideTeleportEntity(Player player, Location location, Vector motion, boolean onGround, int... entityIDs);
+
+    public void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs) {
+        this.sendClientSideTeleportEntity(player, location, new Vector(0, 0, 0), onGround, entityIDs);
+    }
 
     public abstract void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs);
 

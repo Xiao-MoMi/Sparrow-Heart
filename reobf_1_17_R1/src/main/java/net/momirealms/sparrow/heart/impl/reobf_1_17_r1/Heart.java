@@ -400,7 +400,7 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
-    public void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs) {
+    public void sendClientSideTeleportEntity(Player player, Location location, Vector motion, boolean onGround, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         float ROTATION_FACTOR = 256.0F / 360.0F;
         float yaw = location.getYaw() * ROTATION_FACTOR;

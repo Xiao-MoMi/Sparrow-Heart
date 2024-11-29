@@ -9,12 +9,10 @@ import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.Connection;
-import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
-import net.minecraft.network.chat.contents.ScoreContents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.GameTestAddMarkerDebugPayload;
@@ -35,7 +33,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
-import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
@@ -46,9 +43,6 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
@@ -77,11 +71,9 @@ import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import net.momirealms.sparrow.heart.util.BossBarUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
@@ -407,7 +399,7 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
-    public void sendClientSideTeleportEntity(Player player, Location location, boolean onGround, int... entityIDs) {
+    public void sendClientSideTeleportEntity(Player player, Location location, Vector motion, boolean onGround, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
         for (int entityID : entityIDs) {
@@ -416,7 +408,7 @@ public class Heart extends SparrowHeart {
                     PositionMoveRotation.of(new TeleportTransition(
                             serverPlayer.serverLevel(),
                             new Vec3(location.getX(), location.getY(), location.getZ()),
-                            Vec3.ZERO,
+                            new Vec3(motion.getX(), motion.getY(), motion.getZ()),
                             location.getYaw(), location.getPitch(),
                             false, false, Set.of(), (entity -> {}), PlayerTeleportEvent.TeleportCause.PLUGIN
                     )),
