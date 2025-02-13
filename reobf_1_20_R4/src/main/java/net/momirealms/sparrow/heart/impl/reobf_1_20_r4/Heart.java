@@ -507,6 +507,12 @@ public class Heart extends SparrowHeart {
     }
 
     @Override
+    public UUID getFishingHookOwner(FishHook hook) {
+        FishingHook fishingHook = ((CraftFishHook) hook).getHandle();
+        return fishingHook.ownerUUID;
+    }
+
+    @Override
     public List<ItemStack> getFishingLoot(Player player, FishHook hook, ItemStack rod) {
         Location location = hook.getLocation();
         ServerLevel level = ((CraftWorld) location.getWorld()).getHandle();

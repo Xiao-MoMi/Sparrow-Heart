@@ -152,6 +152,8 @@ public abstract class SparrowHeart {
 
     public abstract void useItem(Player player, HandSlot handSlot, @Nullable ItemStack itemStack);
 
+    public abstract UUID getFishingHookOwner(FishHook hook);
+
     public abstract List<ItemStack> getFishingLoot(Player player, FishHook hook, ItemStack rod);
 
     public abstract Map<String, Integer> itemEnchantmentsToMap(Object item);
