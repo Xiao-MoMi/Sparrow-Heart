@@ -15,6 +15,7 @@ import net.momirealms.sparrow.heart.feature.team.TeamColor;
 import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.entity.FishHook;
 import org.bukkit.entity.Player;
@@ -33,10 +34,6 @@ public abstract class SparrowHeart {
     public static SparrowHeart getInstance() {
         return SingletonHolder.INSTANCE;
     }
-
-    public abstract FluidData getFluidData(Location location);
-
-    public abstract boolean isRainingAt(Location location);
 
     private static class SingletonHolder {
         private static final SparrowHeart INSTANCE = getHeart();
@@ -165,4 +162,10 @@ public abstract class SparrowHeart {
     public abstract FakeItemDisplay createFakeItemDisplay(Location location);
 
     public abstract FakeTextDisplay createFakeTextDisplay(Location location);
+
+    public abstract FluidData getFluidData(Location location);
+
+    public abstract boolean isRainingAt(Location location);
+
+    public abstract List<String> getAllBlockStates(Material material);
 }

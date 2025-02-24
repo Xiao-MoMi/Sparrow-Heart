@@ -7,6 +7,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.*;
 import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.*;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
@@ -43,6 +44,8 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
@@ -71,10 +74,12 @@ import net.momirealms.sparrow.heart.util.BossBarUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.entity.CraftFishHook;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -585,5 +590,17 @@ public class Heart extends SparrowHeart {
     public boolean isRainingAt(Location location) {
         CraftWorld craftWorld = (CraftWorld) location.getWorld();
         return craftWorld.getHandle().isRainingAt(CraftLocation.toBlockPosition(location));
+    }
+
+    @Override
+    public List<String> getAllBlockStates(Material material) {
+        Optional<Block> optionalBlock = BuiltInRegistries.BLOCK.getOptional(ResourceLocation.fromNamespaceAndPath(material.getKey().namespace(), material.getKey().value()));
+        if (optionalBlock.isEmpty()) return Collections.emptyList();
+        Block block = optionalBlock.get();
+        List<String> list = new ArrayList<>();
+        for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+            list.add(CraftBlockData.fromData(state).getAsString());
+        }
+        return list;
     }
 }

@@ -37,6 +37,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
@@ -66,10 +68,12 @@ import net.momirealms.sparrow.heart.util.BossBarUtils;
 import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
 import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.craftbukkit.v1_19_R2.CraftWorld;
+import org.bukkit.craftbukkit.v1_19_R2.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.v1_19_R2.entity.CraftFishHook;
 import org.bukkit.craftbukkit.v1_19_R2.entity.CraftPlayer;
 import org.bukkit.craftbukkit.v1_19_R2.event.CraftEventFactory;
@@ -571,5 +575,17 @@ public class Heart extends SparrowHeart {
     public boolean isRainingAt(Location location) {
         CraftWorld craftWorld = (CraftWorld) location.getWorld();
         return craftWorld.getHandle().isRainingAt(new BlockPos(location.getX(), location.getY(), location.getZ()));
+    }
+
+    @Override
+    public List<String> getAllBlockStates(Material material) {
+        Optional<Block> optionalBlock = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(material.getKey().namespace(), material.getKey().value()));
+        if (optionalBlock.isEmpty()) return Collections.emptyList();
+        Block block = optionalBlock.get();
+        List<String> list = new ArrayList<>();
+        for (BlockState state : block.getStateDefinition().getPossibleStates()) {
+            list.add(CraftBlockData.fromData(state).getAsString());
+        }
+        return list;
     }
 }
