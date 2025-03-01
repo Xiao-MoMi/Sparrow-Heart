@@ -70,9 +70,7 @@ import net.momirealms.sparrow.heart.feature.inventory.HandSlot;
 import net.momirealms.sparrow.heart.feature.team.TeamCollisionRule;
 import net.momirealms.sparrow.heart.feature.team.TeamColor;
 import net.momirealms.sparrow.heart.feature.team.TeamVisibility;
-import net.momirealms.sparrow.heart.util.BossBarUtils;
-import net.momirealms.sparrow.heart.util.SelfIncreaseEntityID;
-import net.momirealms.sparrow.heart.util.SelfIncreaseInt;
+import net.momirealms.sparrow.heart.util.*;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -112,32 +110,27 @@ public class Heart extends SparrowHeart {
 
     public Heart() {
         try {
-            Class<?> cls = Class.forName("net.minecraft.network.protocol.game.ClientboundBossEventPacket$OperationType");
-            Field fieldAdd = cls.getDeclaredField("ADD");
-            fieldAdd.setAccessible(true);
+            Class<?> operationTypeClass = ReflectionUtils.getClazz(
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.ClientboundBossEventPacket$OperationType"),
+                    BukkitReflectionUtils.assembleMCClass("network.protocol.game.PacketPlayOutBoss$d")
+            );
+            assert operationTypeClass != null;
+            Field fieldAdd = ReflectionUtils.getDeclaredField(operationTypeClass, 0);
             addBossBarOperation = (Enum<?>) fieldAdd.get(null);
-            Field fieldUpdateProgress = cls.getDeclaredField("UPDATE_PROGRESS");
-            fieldUpdateProgress.setAccessible(true);
+            Field fieldUpdateProgress = ReflectionUtils.getDeclaredField(operationTypeClass, 2);
             updateBossBarProgressOperation = (Enum<?>) fieldUpdateProgress.get(null);
-            Field fieldUpdateName = cls.getDeclaredField("UPDATE_NAME");
-            fieldUpdateName.setAccessible(true);
+            Field fieldUpdateName = ReflectionUtils.getDeclaredField(operationTypeClass, 3);
             updateBossBarNameOperation = (Enum<?>) fieldUpdateName.get(null);
         } catch (Exception e) {
             throw new RuntimeException("Failed to get add boss bar operation", e);
         }
         try {
-            Field dataBitingField = FishingHook.class.getDeclaredField("DATA_BITING");
-            dataBitingField.setAccessible(true);
+            Field dataBitingField = ReflectionUtils.getDeclaredField(FishingHook.class, EntityDataAccessor.class, 1);
             dataBiting = (EntityDataAccessor<Boolean>) dataBitingField.get(null);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get hook biting state", e);
         }
-        try {
-            sendPacketImmediateMethod = Connection.class.getDeclaredMethod("sendPacket", Packet.class, PacketSendListener.class, boolean.class);
-            sendPacketImmediateMethod.setAccessible(true);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to get send packet method", e);
-        }
+        sendPacketImmediateMethod = ReflectionUtils.getDeclaredMethod(Connection.class, void.class, Packet.class, PacketSendListener.class, boolean.class);
         SparrowFluidData.register(LavaFluid.Source.class, SparrowFallingFluidData::new);
         SparrowFluidData.register(WaterFluid.Source.class, SparrowFallingFluidData::new);
         SparrowFluidData.register(LavaFluid.Flowing.class, SparrowFlowingFluidData::new);

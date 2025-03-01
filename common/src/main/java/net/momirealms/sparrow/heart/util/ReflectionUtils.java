@@ -10,6 +10,8 @@ import java.util.List;
 
 public class ReflectionUtils {
 
+    private ReflectionUtils() {}
+
     public static Class<?> getClazz(String... classes) {
         for (String className : classes) {
             Class<?> clazz = getClazz(className);
@@ -47,7 +49,7 @@ public class ReflectionUtils {
     }
 
     @Nullable
-    public static Field getField(final Class<?> clazz, final String field) {
+    public static Field getDeclaredField(final Class<?> clazz, final String field) {
         try {
             return setAccessible(clazz.getDeclaredField(field));
         } catch (NoSuchFieldException e) {
@@ -56,7 +58,7 @@ public class ReflectionUtils {
     }
 
     @NotNull
-    public static Field getField(@NotNull Class<?> clazz, @NotNull String... possibleNames) {
+    public static Field getDeclaredField(@NotNull Class<?> clazz, @NotNull String... possibleNames) {
         List<String> possibleNameList = Arrays.asList(possibleNames);
         for (Field field : clazz.getDeclaredFields()) {
             if (possibleNameList.contains(field.getName())) {
@@ -67,7 +69,7 @@ public class ReflectionUtils {
     }
 
     @Nullable
-    public static Field getField(final Class<?> clazz, final int index) {
+    public static Field getDeclaredField(final Class<?> clazz, final int index) {
         int i = 0;
         for (final Field field : clazz.getDeclaredFields()) {
             if (index == i) {
@@ -79,7 +81,7 @@ public class ReflectionUtils {
     }
 
     @Nullable
-    public static Field getInstanceField(final Class<?> clazz, final int index) {
+    public static Field getInstanceDeclaredField(final Class<?> clazz, final int index) {
         int i = 0;
         for (final Field field : clazz.getDeclaredFields()) {
             if (!Modifier.isStatic(field.getModifiers())) {
@@ -93,7 +95,7 @@ public class ReflectionUtils {
     }
 
     @Nullable
-    public static Field getField(final Class<?> clazz, final Class<?> type, int index) {
+    public static Field getDeclaredField(final Class<?> clazz, final Class<?> type, int index) {
         int i = 0;
         for (final Field field : clazz.getDeclaredFields()) {
             if (field.getType() == type) {
@@ -107,7 +109,23 @@ public class ReflectionUtils {
     }
 
     @Nullable
-    public static Field getInstanceField(@NotNull Class<?> clazz, final Class<?> type, int index) {
+    public static Field getDeclaredFieldBackwards(final Class<?> clazz, final Class<?> type, int index) {
+        int i = 0;
+        Field[] fields = clazz.getDeclaredFields();
+        for (int j = fields.length - 1; j >= 0; j--) {
+            Field field = fields[j];
+            if (field.getType() == type) {
+                if (index == i) {
+                    return setAccessible(field);
+                }
+                i++;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Field getInstanceDeclaredField(@NotNull Class<?> clazz, final Class<?> type, int index) {
         int i = 0;
         for (final Field field : clazz.getDeclaredFields()) {
             if (field.getType() == type && !Modifier.isStatic(field.getModifiers())) {
@@ -121,7 +139,7 @@ public class ReflectionUtils {
     }
 
     @NotNull
-    public static List<Field> getFields(final Class<?> clazz) {
+    public static List<Field> getDeclaredFields(final Class<?> clazz) {
         List<Field> fields = new ArrayList<>();
         for (Field field : clazz.getDeclaredFields()) {
             fields.add(setAccessible(field));
@@ -130,7 +148,7 @@ public class ReflectionUtils {
     }
 
     @NotNull
-    public static List<Field> getInstanceFields(@NotNull Class<?> clazz) {
+    public static List<Field> getInstanceDeclaredFields(@NotNull Class<?> clazz) {
         List<Field> list = new ArrayList<>();
         for (Field field : clazz.getDeclaredFields()) {
             if (!Modifier.isStatic(field.getModifiers())) {
@@ -141,7 +159,7 @@ public class ReflectionUtils {
     }
 
     @NotNull
-    public static List<Field> getFields(@NotNull final Class<?> clazz, @NotNull final Class<?> type) {
+    public static List<Field> getDeclaredFields(@NotNull final Class<?> clazz, @NotNull final Class<?> type) {
         List<Field> fields = new ArrayList<>();
         for (Field field : clazz.getDeclaredFields()) {
             if (field.getType() == type) {
@@ -152,7 +170,7 @@ public class ReflectionUtils {
     }
 
     @NotNull
-    public static List<Field> getInstanceFields(@NotNull Class<?> clazz, @NotNull Class<?> type) {
+    public static List<Field> getInstanceDeclaredFields(@NotNull Class<?> clazz, @NotNull Class<?> type) {
         List<Field> list = new ArrayList<>();
         for (Field field : clazz.getDeclaredFields()) {
             if (field.getType() == type && !Modifier.isStatic(field.getModifiers())) {
@@ -160,6 +178,30 @@ public class ReflectionUtils {
             }
         }
         return list;
+    }
+
+    @Nullable
+    public static Method getMethod(final Class<?> clazz, Class<?> returnType, final String[] possibleMethodNames, final Class<?>... parameterTypes) {
+        outer:
+        for (Method method : clazz.getMethods()) {
+            if (method.getParameterCount() != parameterTypes.length) {
+                continue;
+            }
+            Class<?>[] types = method.getParameterTypes();
+            for (int i = 0; i < types.length; i++) {
+                if (types[i] != parameterTypes[i]) {
+                    continue outer;
+                }
+            }
+            for (String name : possibleMethodNames) {
+                if (name.equals(method.getName())) {
+                    if (returnType.isAssignableFrom(method.getReturnType())) {
+                        return method;
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     @Nullable
@@ -183,7 +225,25 @@ public class ReflectionUtils {
     }
 
     @Nullable
-    public static Method getDelcaredMethod(final Class<?> clazz, final String[] possibleMethodNames, final Class<?>... parameterTypes) {
+    public static Method getMethod(final Class<?> clazz, Class<?> returnType, final Class<?>... parameterTypes) {
+        outer:
+        for (Method method : clazz.getMethods()) {
+            if (method.getParameterCount() != parameterTypes.length) {
+                continue;
+            }
+            Class<?>[] types = method.getParameterTypes();
+            for (int i = 0; i < types.length; i++) {
+                if (types[i] != parameterTypes[i]) {
+                    continue outer;
+                }
+            }
+            if (returnType.isAssignableFrom(method.getReturnType())) return method;
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Method getDeclaredMethod(final Class<?> clazz, Class<?> returnType, final String[] possibleMethodNames, final Class<?>... parameterTypes) {
         outer:
         for (Method method : clazz.getDeclaredMethods()) {
             if (method.getParameterCount() != parameterTypes.length) {
@@ -196,8 +256,118 @@ public class ReflectionUtils {
                 }
             }
             for (String name : possibleMethodNames) {
-                if (name.equals(method.getName())) return method;
+                if (name.equals(method.getName())) {
+                    if (returnType.isAssignableFrom(method.getReturnType())) {
+                        return setAccessible(method);
+                    }
+                }
             }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Method getDeclaredMethod(final Class<?> clazz, Class<?> returnType, final Class<?>... parameterTypes) {
+        outer:
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.getParameterCount() != parameterTypes.length) {
+                continue;
+            }
+            Class<?>[] types = method.getParameterTypes();
+            for (int i = 0; i < types.length; i++) {
+                if (types[i] != parameterTypes[i]) {
+                    continue outer;
+                }
+            }
+            if (returnType.isAssignableFrom(method.getReturnType())) return setAccessible(method);
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Method getMethod(final Class<?> clazz, Class<?> returnType, int index) {
+        int i = 0;
+        for (Method method : clazz.getMethods()) {
+            if (returnType.isAssignableFrom(method.getReturnType())) {
+                if (i == index) {
+                    return setAccessible(method);
+                }
+                i++;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Method getStaticMethod(final Class<?> clazz, Class<?> returnType, final Class<?>... parameterTypes) {
+        outer:
+        for (Method method : clazz.getMethods()) {
+            if (method.getParameterCount() != parameterTypes.length) {
+                continue;
+            }
+            if (!Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            Class<?>[] types = method.getParameterTypes();
+            for (int i = 0; i < types.length; i++) {
+                if (types[i] != parameterTypes[i]) {
+                    continue outer;
+                }
+            }
+            if (returnType.isAssignableFrom(method.getReturnType()))
+                return setAccessible(method);
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Method getStaticMethod(final Class<?> clazz, String[] possibleNames, Class<?> returnType, final Class<?>... parameterTypes) {
+        outer:
+        for (Method method : clazz.getMethods()) {
+            if (method.getParameterCount() != parameterTypes.length) {
+                continue;
+            }
+            if (!Modifier.isStatic(method.getModifiers())) {
+                continue;
+            }
+            Class<?>[] types = method.getParameterTypes();
+            for (int i = 0; i < types.length; i++) {
+                if (types[i] != parameterTypes[i]) {
+                    continue outer;
+                }
+            }
+            if (returnType.isAssignableFrom(method.getReturnType())) {
+                for (String name : possibleNames) {
+                    if (name.equals(method.getName())) {
+                        return setAccessible(method);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public static Method getStaticMethod(final Class<?> clazz, int index) {
+        int i = 0;
+        for (Method method : clazz.getMethods()) {
+            if (Modifier.isStatic(method.getModifiers())) {
+                if (i == index) {
+                    return setAccessible(method);
+                }
+                i++;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static Method getMethod(final Class<?> clazz, int index) {
+        int i = 0;
+        for (Method method : clazz.getMethods()) {
+            if (i == index) {
+                return setAccessible(method);
+            }
+            i++;
         }
         return null;
     }
@@ -247,13 +417,22 @@ public class ReflectionUtils {
     }
 
     @Nullable
+    public static Constructor<?> getDeclaredConstructor(Class<?> clazz, Class<?>... parameterTypes) {
+        try {
+            return setAccessible(clazz.getDeclaredConstructor(parameterTypes));
+        } catch (NoSuchMethodException | SecurityException ignore) {
+            return null;
+        }
+    }
+
+    @Nullable
     public static Constructor<?> getConstructor(Class<?> clazz, int index) {
         try {
             Constructor<?>[] constructors = clazz.getDeclaredConstructors();
             if (index < 0 || index >= constructors.length) {
                 throw new IndexOutOfBoundsException("Invalid constructor index: " + index);
             }
-            return constructors[index];
+            return setAccessible(constructors[index]);
         } catch (SecurityException e) {
             return null;
         }
