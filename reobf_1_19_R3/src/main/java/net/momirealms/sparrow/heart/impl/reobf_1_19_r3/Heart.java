@@ -588,7 +588,7 @@ public class Heart extends SparrowHeart {
 
     @Override
     public List<String> getAllBlockStates(Material material) {
-        Optional<Block> optionalBlock = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(material.getKey().namespace(), material.getKey().value()));
+        Optional<Block> optionalBlock = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(material.getKey().getNamespace(), material.getKey().getKey()));
         if (optionalBlock.isEmpty()) return Collections.emptyList();
         Block block = optionalBlock.get();
         List<String> list = new ArrayList<>();
