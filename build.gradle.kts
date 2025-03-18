@@ -1,17 +1,16 @@
 plugins {
     id("java")
     id("maven-publish")
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "9.0.0-beta11"
 }
 
 val projectVersion : String by project
 val projectGroup : String by project
 
 subprojects {
-
     apply(plugin = "java")
     apply(plugin = "maven-publish")
-    apply(plugin = "com.github.johnrengelman.shadow")
+    apply(plugin = "com.gradleup.shadow")
 
     repositories {
         mavenCentral()
@@ -19,22 +18,10 @@ subprojects {
     }
 
     if ("heart" == project.name) {
-
         tasks.shadowJar {
             destinationDirectory.set(file("$rootDir/target"))
             archiveClassifier.set("")
-            archiveFileName.set("Sparrow-Heart-${projectVersion}.jar")
-        }
-
-        publishing {
-            publications {
-                create<MavenPublication>("mavenJava") {
-                    groupId = "net.momirealms"
-                    artifactId = "Sparrow-Heart"
-                    version = rootProject.version.toString()
-                    artifact(tasks.shadowJar)
-                }
-            }
+            archiveFileName.set("sparrow-heart-${projectVersion}.jar")
         }
     }
 }

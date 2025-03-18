@@ -1,11 +1,9 @@
-import io.papermc.paperweight.userdev.PaperweightUserDependenciesExtension
-
 plugins {
-    id("io.papermc.paperweight.userdev") version "1.7.4"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.16"
 }
 
 dependencies {
-    the<PaperweightUserDependenciesExtension>().paperDevBundle("1.21.4-R0.1-20241215.095037-18")
+    paperweightDevelopmentBundle("io.papermc.paper:dev-bundle:1.21.4-R0.1-SNAPSHOT")
     compileOnly(project(":common"))
 }
 
