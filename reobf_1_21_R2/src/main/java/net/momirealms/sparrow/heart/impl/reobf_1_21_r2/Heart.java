@@ -140,11 +140,7 @@ public class Heart extends SparrowHeart {
     }
 
     private void sendPacketImmediately(ServerPlayer serverPlayer, Packet<ClientGamePacketListener> packet) {
-        try {
-            sendPacketImmediateMethod.invoke(serverPlayer.connection.connection, packet, null, true);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Failed to send packet", e);
-        }
+        serverPlayer.connection.connection.channel.writeAndFlush(packet);
     }
 
     @Override

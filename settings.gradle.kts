@@ -2,6 +2,7 @@ rootProject.name = "Sparrow-Heart"
 include(":heart")
 include(":common")
 include(":plugin")
+include(":reobf_1_21_R5")
 include(":reobf_1_21_R4")
 include(":reobf_1_21_R3")
 include(":reobf_1_21_R2")

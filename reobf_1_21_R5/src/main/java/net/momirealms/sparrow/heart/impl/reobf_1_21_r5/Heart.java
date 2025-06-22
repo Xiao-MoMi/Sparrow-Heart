@@ -1,4 +1,4 @@
-package net.momirealms.sparrow.heart.impl.reobf_1_21_r3;
+package net.momirealms.sparrow.heart.impl.reobf_1_21_r5;
 
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
@@ -31,6 +31,7 @@ import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.BossEvent;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.PositionMoveRotation;
@@ -38,7 +39,6 @@ import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -109,7 +109,6 @@ public class Heart extends SparrowHeart {
     private final Enum<?> updateBossBarNameOperation;
     private final Enum<?> updateBossBarProgressOperation;
     private final EntityDataAccessor<Boolean> dataBiting;
-    private final Method sendPacketImmediateMethod;
 
     public Heart() {
         try {
@@ -133,7 +132,6 @@ public class Heart extends SparrowHeart {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("Failed to get hook biting state", e);
         }
-        sendPacketImmediateMethod = ReflectionUtils.getDeclaredMethod(Connection.class, void.class, Packet.class, PacketSendListener.class, boolean.class);
         SparrowFluidData.register(LavaFluid.Source.class, SparrowFallingFluidData::new);
         SparrowFluidData.register(WaterFluid.Source.class, SparrowFallingFluidData::new);
         SparrowFluidData.register(LavaFluid.Flowing.class, SparrowFlowingFluidData::new);
@@ -186,8 +184,8 @@ public class Heart extends SparrowHeart {
         advancementProgress.update(advancementRequirements);
         Objects.requireNonNull(advancementProgress.getCriterion("impossible")).grant();
         advancementsToGrant.put(id.get(), advancementProgress);
-        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(new AdvancementHolder(id.get(), advancement))), new HashSet<>(), advancementsToGrant);
-        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id.get())), new HashMap<>());
+        ClientboundUpdateAdvancementsPacket packet1 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(List.of(new AdvancementHolder(id.get(), advancement))), new HashSet<>(), advancementsToGrant, true);
+        ClientboundUpdateAdvancementsPacket packet2 = new ClientboundUpdateAdvancementsPacket(false, new ArrayList<>(), new HashSet<>(List.of(id.get())), new HashMap<>(), true);
         ArrayList<Packet<? super ClientGamePacketListener>> packetListeners = new ArrayList<>();
         packetListeners.add(packet1);
         packetListeners.add(packet2);
@@ -293,8 +291,8 @@ public class Heart extends SparrowHeart {
 
                 if (list != null && !list.isEmpty()) {
                     EnchantmentInstance weightedRandomEnchant = list.get(random.nextInt(list.size()));
-                    enchantClue[j] = registry.getId(weightedRandomEnchant.enchantment);
-                    levelClue[j] = weightedRandomEnchant.level;
+                    enchantClue[j] = registry.getId(weightedRandomEnchant.enchantment());
+                    levelClue[j] = weightedRandomEnchant.level();
                 }
             }
         }
@@ -401,7 +399,7 @@ public class Heart extends SparrowHeart {
             ClientboundTeleportEntityPacket packet = ClientboundTeleportEntityPacket.teleport(
                     entityID,
                     PositionMoveRotation.of(new TeleportTransition(
-                            serverPlayer.serverLevel(),
+                            serverPlayer.level(),
                             new Vec3(location.getX(), location.getY(), location.getZ()),
                             new Vec3(motion.getX(), motion.getY(), motion.getZ()),
                             location.getYaw(), location.getPitch(),
@@ -500,7 +498,9 @@ public class Heart extends SparrowHeart {
     @Override
     public UUID getFishingHookOwner(FishHook hook) {
         FishingHook fishingHook = ((CraftFishHook) hook).getHandle();
-        return fishingHook.ownerUUID;
+        Entity owner = fishingHook.getOwner();
+        if (owner == null) return null;
+        return owner.getUUID();
     }
 
     @Override
@@ -508,7 +508,7 @@ public class Heart extends SparrowHeart {
         Location location = hook.getLocation();
         ServerLevel level = ((CraftWorld) location.getWorld()).getHandle();
         LootParams lootparams = (new LootParams.Builder(level))
-                .withParameter(LootContextParams.ORIGIN, CraftLocation.toVec3D(location))
+                .withParameter(LootContextParams.ORIGIN, CraftLocation.toVec3(location))
                 .withParameter(LootContextParams.TOOL, CraftItemStack.asNMSCopy(rod))
                 .withParameter(LootContextParams.THIS_ENTITY, ((CraftFishHook) hook).getHandle())
                 .withLuck((float) (rod.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.LUCK_OF_THE_SEA) + Optional.ofNullable(player.getAttribute(Objects.requireNonNull(org.bukkit.Registry.ATTRIBUTE.get(NamespacedKey.minecraft("luck"))))).map(AttributeInstance::getValue).orElse(0d)))
@@ -562,7 +562,7 @@ public class Heart extends SparrowHeart {
     public void sendClientSideEntityMotion(Player player, Vector vector, int... entityIDs) {
         ServerPlayer serverPlayer = ((CraftPlayer) player).getHandle();
         ArrayList<Packet<? super ClientGamePacketListener>> packets = new ArrayList<>();
-        Vec3 vec3 = CraftVector.toNMS(vector);
+        Vec3 vec3 = CraftVector.toVec3(vector);
         for (int entityID : entityIDs) {
             ClientboundSetEntityMotionPacket packet = new ClientboundSetEntityMotionPacket(entityID, vec3);
             packets.add(packet);
