@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.ChatType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.protocol.Packet;
@@ -592,5 +593,11 @@ public class Heart extends SparrowHeart {
             list.add(CraftBlockData.fromData(state).getAsString());
         }
         return list;
+    }
+
+    @Override
+    public void sendMessage(Player player, String messageJson) {
+        ClientboundChatPacket packet = new ClientboundChatPacket(CraftChatMessage.fromJSON(messageJson), ChatType.SYSTEM, null);
+        ((CraftPlayer) player).getHandle().connection.send(packet);
     }
 }

@@ -35,6 +35,8 @@ public abstract class SparrowHeart {
         return SingletonHolder.INSTANCE;
     }
 
+    public abstract void sendMessage(Player player, String messageJson);
+
     private static class SingletonHolder {
         private static final SparrowHeart INSTANCE = getHeart();
 

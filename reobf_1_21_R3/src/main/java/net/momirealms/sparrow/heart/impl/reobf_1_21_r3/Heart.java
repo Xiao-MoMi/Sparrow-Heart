@@ -595,4 +595,10 @@ public class Heart extends SparrowHeart {
         }
         return list;
     }
+
+    @Override
+    public void sendMessage(Player player, String messageJson) {
+        ClientboundSystemChatPacket systemChatPacket = new ClientboundSystemChatPacket(CraftChatMessage.fromJSON(messageJson), false);
+        ((CraftPlayer) player).getHandle().connection.send(systemChatPacket);
+    }
 }

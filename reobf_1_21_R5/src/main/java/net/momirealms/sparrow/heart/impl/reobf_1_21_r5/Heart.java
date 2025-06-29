@@ -9,8 +9,6 @@ import net.minecraft.advancements.critereon.ImpossibleTrigger;
 import net.minecraft.core.*;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.Connection;
-import net.minecraft.network.PacketSendListener;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
@@ -99,7 +97,6 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
 
 public class Heart extends SparrowHeart {
@@ -594,5 +591,11 @@ public class Heart extends SparrowHeart {
             list.add(CraftBlockData.fromData(state).getAsString());
         }
         return list;
+    }
+
+    @Override
+    public void sendMessage(Player player, String messageJson) {
+        ClientboundSystemChatPacket systemChatPacket = new ClientboundSystemChatPacket(CraftChatMessage.fromJSON(messageJson), false);
+        ((CraftPlayer) player).getHandle().connection.send(systemChatPacket);
     }
 }
