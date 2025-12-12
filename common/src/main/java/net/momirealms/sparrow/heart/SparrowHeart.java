@@ -44,6 +44,7 @@ public abstract class SparrowHeart {
             String bukkitVersion = Bukkit.getServer().getBukkitVersion().split("-")[0];
             String packageName;
             switch (bukkitVersion) {
+                case "1.21.11" -> packageName = "reobf_1_21_r7";
                 case "1.21.9", "1.21.10" -> packageName = "reobf_1_21_r6";
                 case "1.21.6", "1.21.7", "1.21.8" -> packageName = "reobf_1_21_r5";
                 case "1.21.5" -> packageName = "reobf_1_21_r4";
