@@ -3,6 +3,7 @@ val projectGroup : String by project
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(mapOf("path" to ":reobf_1_21_R7")))
     implementation(project(mapOf("path" to ":reobf_1_21_R6", "configuration" to "reobf")))
     implementation(project(mapOf("path" to ":reobf_1_21_R5", "configuration" to "reobf")))
     implementation(project(mapOf("path" to ":reobf_1_21_R4", "configuration" to "reobf")))
@@ -22,16 +23,20 @@ dependencies {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
     toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+        languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+artifacts {
+    archives(tasks.shadowJar)
 }
 
 tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
-    options.release.set(17)
+    options.release.set(21)
 }
 
 publishing {
